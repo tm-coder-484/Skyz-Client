@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "skyz_client",
+  "version": "${version}",
+  "name": "Skyz Client",
+  "description": "A beautiful custom main-menu client mod for Minecraft 1.21.11. Replaces the title screen with the full Skyz Client UI — Singleplayer, Multiplayer, Mods, Shaders, HUD Editor, Cosmetics and more.",
+  "authors": [
+    "SkyzDev"
+  ],
+  "contact": {
+    "sources": "https://github.com/skyzdev/skyz-client"
+  },
+  "license": "MIT",
+  "icon": "assets/skyz_client/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.skyz.client.SkyzClientMod"
+    ]
+  },
+  "mixins": [
+    "skyz_client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "sodium": "*",
+    "iris": "*",
+    "modmenu": "*",
+    "essential": "*"
+  }
+}

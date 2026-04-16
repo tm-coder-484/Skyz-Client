@@ -1,0 +1,22 @@
+# Gradle cache (safe to delete, always regenerated)
+
+.gradle/
+
+# Build outputs (except your final jars)
+
+build/*
+!build/libs/
+!build/libs/*.jar
+
+# Common run/dev folders (Fabric Loom)
+
+run/
+
+# Logs
+
+*.log
+
+# OS junk
+
+.DS_Store
+Thumbs.db
