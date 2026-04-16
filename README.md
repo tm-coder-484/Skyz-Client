@@ -38,7 +38,7 @@ Experience a clean, futuristic interface designed for clarity and style:
 
 | Main Menu | Custom HUD | Settings |
 | :---: | :---: | :---: |
-| ![Menu](https://parade-genesis-properly-cameron.trycloudflare.com/images/menu.png) | ![HUD](https://parade-genesis-properly-cameron.trycloudflare.com/images/hud.png) | ![Settings](https://parade-genesis-properly-cameron.trycloudflare.com/images/settings.png) |
+| ![Menu](https://parade-genesis-properly-cameron.trycloudflare.com/images/menu.png?v=1) | ![HUD](https://parade-genesis-properly-cameron.trycloudflare.com/images/hud.png?v=1) | ![Settings](https://parade-genesis-properly-cameron.trycloudflare.com/images/settings.png?v=1) |
 
 
 ---
