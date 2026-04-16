@@ -1,50 +1,73 @@
-\# Contributing to Skyz Client
+# 🤝 Contributing to Skyz Client
 
+First off, thank you for considering contributing to Skyz Client! It's people like you who make the project better for everyone.
 
+## 🚀 Getting Started
 
-\## Reporting Bugs
+Whether you are reporting a bug, suggesting a feature, or submitting a pull request, please follow these guidelines to help us maintain a high-quality codebase.
 
+---
 
+## 🐞 Reporting Bugs
 
-\* Check existing issues
+Found a bug? Please help us fix it by providing as much detail as possible.
 
-\* Provide steps + logs
+1. **Check Existing Issues**: Before opening a new issue, please search the [Issues tab](#) to see if the bug has already been reported.
+2. **Create a Detailed Report**: If the bug is new, open an issue and include:
+    - **Description**: What is happening?
+    - **Steps to Reproduce**: A clear, step-by-step list of how to trigger the bug.
+    - **Expected vs Actual Behavior**: What should happen vs what actually happens.
+    - **Logs**: Attach the `latest.log` from your `.minecraft/logs/` folder.
+    - **Environment**: Minecraft version, Fabric Loader version, and any other mods installed.
 
+---
 
+## ✨ Suggesting Features
 
-\## Features
+Have a great idea for a new module or a UI improvement?
 
+1. **Open an Issue**: Create a new issue and use the `enhancement` label.
+2. **Describe the "Why"**: Explain how this feature benefits the user and how it should work.
+3. **Mockups**: If it's a UI change, screenshots or sketches are highly encouraged!
 
+---
 
-\* Open issue with "enhancement"
+## 🛠️ Pull Requests
 
+We love PRs! To ensure a smooth merge process, please follow these steps:
 
+1. **Fork & Branch**: Fork the repository and create a feature branch from `main`.
+2. **Code Style**: Keep your code clean and consistent with the existing project structure.
+3. **Testing**: Ensure your changes don't break the build. Run `./gradlew build` before submitting.
+4. **Submit**: Open a PR with a clear description of what you've changed and why.
 
-\## Pull Requests
+**PR Checklist:**
+- [ ] My code follows the project style.
+- [ ] I have commented my code, particularly in complex areas.
+- [ ] My changes have been tested locally.
+- [ ] I have updated documentation (if applicable).
 
+---
 
+## 💻 Development Setup
 
-1\. Fork repo
+To get your development environment ready:
 
-2\. Create branch
+1. **Clone the Repo**:
+   ```bash
+   git clone https://github.com/your-username/skyz-client.git
+   cd skyz-client
+   ```
+2. **Build the Project**:
+   ```bash
+   ./gradlew build
+   ```
+   *(Refer to [how_to_build.md](how_to_build.md) for detailed prerequisites like Java 21).*
 
-3\. Follow code style
+---
 
-4\. Submit PR
+## 📜 License
 
+By contributing to Skyz Client, you agree that your contributions will be licensed under the **MIT License**.
 
-
-\## Setup
-
-
-
-\* Clone repo
-
-\* Run: ./gradlew build
-
-
-
-By contributing, you agree to the MIT License.
-
-
-
+**Thank you for helping us make Skyz Client the best it can be! 🌌**
