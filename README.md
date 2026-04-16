@@ -38,7 +38,7 @@ Experience a clean, futuristic interface designed for clarity and style:
 
 | Main Menu | Custom HUD | Settings |
 | :---: | :---: | :---: |
-| ![Menu](https://were-bingo-blair-recommends.trycloudflare.com/images/menu.png?v=1) | ![HUD](https://were-bingo-blair-recommends.trycloudflare.com/images/hud.png?v=1) | ![Settings](https://were-bingo-blair-recommends.trycloudflare.com/images/settings.png?v=1) |
+| ![Menu](https://raw.githubusercontent.com/tmaco0/Skyz-Client/main/.github/assets/menu.png) | ![HUD](https://raw.githubusercontent.com/tmaco0/Skyz-Client/main/.github/assets/hud.png) | ![Settings](https://raw.githubusercontent.com/tmaco0/Skyz-Client/main/.github/assets/settings.png) |
 
 
 ---
