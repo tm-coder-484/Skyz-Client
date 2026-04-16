@@ -46,7 +46,7 @@ Experience a clean, futuristic interface designed for clarity and style:
 ## 📥 Installation
 
 ### ⚡ Quick Start
-1. **Download** the latest release from the [Releases](#) page.
+1. **Download** the latest release from the [Releases](https://github.com/tm-coder-484/Skyz-Client/releases) page.
 2. **Install Fabric Loader (1.21.11)** from [fabricmc.net](https://fabricmc.net/use/installer/).
 3. **Add Fabric API** and the `skyz-client-2.5.0.jar` to your `mods` folder.
 4. **Launch** and enjoy!
