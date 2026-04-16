@@ -36,11 +36,10 @@ Experience a clean, futuristic interface designed for clarity and style:
 
 ## 📸 Screenshots
 
-| Main Menu | Custom HUD | Shaders |
+| Main Menu | Custom HUD | Settings |
 | :---: | :---: | :---: |
-| ![Menu](https://parade-genesis-properly-cameron.trycloudflare.com/images/menu.png) | ![HUD](https://parade-genesis-properly-cameron.trycloudflare.com/images/hud.png) | ![Shaders](https://parade-genesis-properly-cameron.trycloudflare.com/images/shaders.png) |
+| ![Menu](https://parade-genesis-properly-cameron.trycloudflare.com/images/menu.png) | ![HUD](https://parade-genesis-properly-cameron.trycloudflare.com/images/hud.png) | ![Settings](https://parade-genesis-properly-cameron.trycloudflare.com/images/settings.png) |
 
-*(Replace these placeholders with your actual screenshots!)*
 
 ---
 
