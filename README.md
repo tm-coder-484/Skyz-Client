@@ -38,7 +38,7 @@ Experience a clean, futuristic interface designed for clarity and style:
 
 | Main Menu | Custom HUD | Settings |
 | :---: | :---: | :---: |
-| ![Menu](https://parade-genesis-properly-cameron.trycloudflare.com/images/menu.png?v=1) | ![HUD](https://parade-genesis-properly-cameron.trycloudflare.com/images/hud.png?v=1) | ![Settings](https://parade-genesis-properly-cameron.trycloudflare.com/images/settings.png?v=1) |
+| ![Menu](https://were-bingo-blair-recommends.trycloudflare.com/images/menu.png?v=1) | ![HUD](https://were-bingo-blair-recommends.trycloudflare.com/images/hud.png?v=1) | ![Settings](https://were-bingo-blair-recommends.trycloudflare.com/images/settings.png?v=1) |
 
 
 ---
@@ -70,7 +70,7 @@ Want to build it yourself? Check out our detailed [Build Guide](how_to_build.md)
 ## 🌐 Official Portal
 
 Visit our official portal to learn more about Skyz Client and view live assets:
-👉 [https://parade-genesis-properly-cameron.trycloudflare.com](https://parade-genesis-properly-cameron.trycloudflare.com)
+👉 [https://were-bingo-blair-recommends.trycloudflare.com](https://were-bingo-blair-recommends.trycloudflare.com)
 
 ---
 
