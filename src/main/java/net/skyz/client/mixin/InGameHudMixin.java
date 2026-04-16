@@ -104,7 +104,7 @@ public class InGameHudMixin {
                             // Try by game profile name first (more reliable than UUID in some versions)
                             String name = client.player.getName().getString();
                             for (var entry : net.getPlayerList()) {
-                                if (entry.getProfile().name().equals(name)) {
+                                if (entry.getProfile().getName().equals(name)) {
                                     ping = entry.getLatency();
                                     break;
                                 }
@@ -322,7 +322,7 @@ public class InGameHudMixin {
         else if (yaw < 247.5f) dir = "NE";
         else if (yaw < 292.5f) dir = "E";
         else                   dir = "SE";
-        // Scrolling compass strip — render chars N, NE, E, SE, S, SW, W, NW spaced out
+        // Scrolling compass strip \u2014 render chars N, NE, E, SE, S, SW, W, NW spaced out
         String strip = "N  NE  E  SE  S  SW  W  NW  N  NE  E";
         int stripW = tr.getWidth(strip);
         // offset so current direction centers in the element

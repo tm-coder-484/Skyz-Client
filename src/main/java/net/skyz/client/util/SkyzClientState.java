@@ -1,7 +1,6 @@
 package net.skyz.client.util;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.PlayerInput;
 
 /**
  * Central state for all built-in mod toggles.
@@ -73,17 +72,7 @@ public final class SkyzClientState {
         // Toggle sneak - set sneaking state each tick
         if (toggleSneak) {
             client.player.setSneaking(true);
-            
-            PlayerInput current = client.player.input.playerInput;
-            client.player.input.playerInput = new PlayerInput(
-                current.forward(),
-                current.backward(),
-                current.left(),
-                current.right(),
-                current.jump(),
-                true, // The updated 'sneak' value
-                current.sprint()
-            );
+            client.player.input.sneaking = true;
         }
 
         // Anti-AFK - jump every 30 seconds
