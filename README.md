@@ -38,7 +38,7 @@ Experience a clean, futuristic interface designed for clarity and style:
 
 | Main Menu | Custom HUD | Shaders |
 | :---: | :---: | :---: |
-| ![Menu](https://via.placeholder.com/300x170?text=Menu+Screenshot) | ![HUD](https://via.placeholder.com/300x170?text=HUD+Screenshot) | ![Shaders](https://via.placeholder.com/300x170?text=Shaders+Screenshot) |
+| ![Menu](https://parade-genesis-properly-cameron.trycloudflare.com/images/menu.png) | ![HUD](https://parade-genesis-properly-cameron.trycloudflare.com/images/hud.png) | ![Shaders](https://parade-genesis-properly-cameron.trycloudflare.com/images/shaders.png) |
 
 *(Replace these placeholders with your actual screenshots!)*
 
@@ -65,6 +65,13 @@ Want to build it yourself? Check out our detailed [Build Guide](how_to_build.md)
 | **Fabric Loader** | 0.16.10 |
 | **Fabric API** | 0.140.2+1.21.11 |
 | **Java Runtime** | 21 (LTS) |
+
+---
+
+## 🌐 Official Portal
+
+Visit our official portal to learn more about Skyz Client and view live assets:
+👉 [https://parade-genesis-properly-cameron.trycloudflare.com](https://parade-genesis-properly-cameron.trycloudflare.com)
 
 ---
 

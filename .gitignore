@@ -21,3 +21,4 @@ run/
 .DS_Store
 Thumbs.db
 .claude/
+backend/server/
