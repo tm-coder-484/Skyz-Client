@@ -38,7 +38,7 @@ Experience a clean, futuristic interface designed for clarity and style:
 
 | Main Menu | Custom HUD | Settings |
 | :---: | :---: | :---: |
-| ![Menu](https://raw.githubusercontent.com/tmaco0/Skyz-Client/main/.github/assets/menu.png) | ![HUD](https://raw.githubusercontent.com/tmaco0/Skyz-Client/main/.github/assets/hud.png) | ![Settings](https://raw.githubusercontent.com/tmaco0/Skyz-Client/main/.github/assets/settings.png) |
+| ![Menu](.github/assets/menu.png) | ![HUD](.github/assets/hud.png) | ![Settings](.github/assets/settings.png) |
 
 
 ---
