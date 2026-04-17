@@ -30,12 +30,13 @@ public class InGameHudMixin {
     // Session timer
     private static long sessionStart = 0;
 
-    // Minimap terrain cache - only resampled when player moves a block
-    private static int[]  minimapColors = null;
-    private static int    minimapCachedX = Integer.MIN_VALUE;
-    private static int    minimapCachedZ = Integer.MIN_VALUE;
-    private static int    minimapRange   = 48;
-    private static int    minimapSize    = 0;
+    // Minimap: GPU texture built once, re-uploaded only when player moves a block
+    private static net.minecraft.client.texture.NativeImageBackedTexture minimapTex = null;
+    private static net.minecraft.util.Identifier minimapId = null;
+    private static int minimapCachedX = Integer.MIN_VALUE;
+    private static int minimapCachedZ = Integer.MIN_VALUE;
+    private static int minimapTexSize = 0;
+    private static final int MINIMAP_RANGE = 48; // world blocks shown each side
 
     @Inject(method = "render", at = @At("TAIL"))
     private void skyz$render(DrawContext ctx, RenderTickCounter tick, CallbackInfo ci) {
@@ -410,131 +411,134 @@ public class InGameHudMixin {
 
     private void renderMinimap(DrawContext ctx, MinecraftClient client, net.skyz.client.util.SkyzHudState.HudElementState el) {
         int mx = el.x, my = el.y, mw = el.w, mh = el.h;
-        int cx = mx + mw/2, cy = my + mh/2;
-        int range = 48; // blocks shown on each side
-
-        // \u2500\u2500 Terrain layer (cached, resampled only when player moves a block) \u2500\u2500
+        int texSize = Math.min(mw - 2, mh - 2);
         int playerX = (int) client.player.getX();
         int playerZ = (int) client.player.getZ();
-        int mapW = mw - 2, mapH = mh - 2;
 
-        // Resample if moved or first render
-        if (minimapColors == null || minimapSize != mapW ||
-                minimapCachedX != playerX || minimapCachedZ != playerZ) {
-            minimapSize   = mapW;
+        // Rebuild texture only when player moves to a new block, or first render
+        if (minimapTex == null || minimapTexSize != texSize
+                || minimapCachedX != playerX || minimapCachedZ != playerZ) {
             minimapCachedX = playerX;
             minimapCachedZ = playerZ;
-            minimapColors  = new int[mapW * mapH];
-            for (int px = 0; px < mapW; px++) {
-                for (int pz = 0; pz < mapH; pz++) {
-                    int bx = (px - mapW/2) * range / (mapW/2);
-                    int bz = (pz - mapH/2) * range / (mapH/2);
+            minimapTexSize = texSize;
+
+            // Build/rebuild the NativeImage
+            net.minecraft.client.texture.NativeImage img =
+                    new net.minecraft.client.texture.NativeImage(texSize, texSize, false);
+
+            for (int px = 0; px < texSize; px++) {
+                for (int pz = 0; pz < texSize; pz++) {
+                    int bx = (px - texSize/2) * MINIMAP_RANGE / (texSize/2);
+                    int bz = (pz - texSize/2) * MINIMAP_RANGE / (texSize/2);
                     int worldX = playerX + bx;
                     int worldZ = playerZ + bz;
+                    int argb = 0xFF333333;
                     try {
-                        net.minecraft.util.math.ChunkPos cp = new net.minecraft.util.math.ChunkPos(
-                                worldX >> 4, worldZ >> 4);
-                        if (client.world.getChunk(cp.x, cp.z,
-                                net.minecraft.world.chunk.ChunkStatus.FULL, false) == null) {
-                            minimapColors[pz * mapW + px] = 0xFF222222;
-                            continue;
+                        if (client.world.getChunk(worldX >> 4, worldZ >> 4,
+                                net.minecraft.world.chunk.ChunkStatus.FULL, false) != null) {
+                            int topY = client.world.getTopY(
+                                    net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES,
+                                    worldX, worldZ) - 1;
+                            if (topY >= client.world.getBottomY()) {
+                                var state = client.world.getBlockState(
+                                        new net.minecraft.util.math.BlockPos(worldX, topY, worldZ));
+                                int rgb = getBlockMapColor(state);
+                                int shade = Math.max(60, Math.min(255, 80 + topY + 64));
+                                int r = (rgb >> 16 & 0xFF) * shade / 255;
+                                int g = (rgb >>  8 & 0xFF) * shade / 255;
+                                int b = (rgb       & 0xFF) * shade / 255;
+                                argb = 0xFF000000 | (r << 16) | (g << 8) | b;
+                            } else {
+                                argb = 0xFF111111;
+                            }
+                        } else {
+                            argb = 0xFF222222;
                         }
-                        int topY = client.world.getTopY(
-                                net.minecraft.world.Heightmap.Type.MOTION_BLOCKING_NO_LEAVES,
-                                worldX, worldZ) - 1;
-                        if (topY < client.world.getBottomY()) {
-                            minimapColors[pz * mapW + px] = 0xFF111111;
-                            continue;
-                        }
-                        var state = client.world.getBlockState(
-                                new net.minecraft.util.math.BlockPos(worldX, topY, worldZ));
-                        int blockColor = getBlockMapColor(state);
-                        int shade = Math.max(60, Math.min(255, 80 + (topY + 64)));
-                        int r = (blockColor >> 16 & 0xFF) * shade / 255;
-                        int g = (blockColor >>  8 & 0xFF) * shade / 255;
-                        int b = (blockColor       & 0xFF) * shade / 255;
-                        minimapColors[pz * mapW + px] = 0xFF000000 | (r<<16) | (g<<8) | b;
-                    } catch (Exception ignored) {
-                        minimapColors[pz * mapW + px] = 0xFF333333;
-                    }
+                    } catch (Exception ignored) {}
+                    // NativeImage uses ABGR format
+                    int a = (argb >> 24) & 0xFF;
+                    int r = (argb >> 16) & 0xFF;
+                    int g = (argb >>  8) & 0xFF;
+                    int b = (argb)       & 0xFF;
+                    img.setColor(px, pz, (a << 24) | (b << 16) | (g << 8) | r);
                 }
             }
-        }
 
-        // Draw cached terrain
-        ctx.enableScissor(mx+1, my+1, mx+mw-1, my+mh-1);
-        for (int px = 0; px < mapW; px++) {
-            for (int pz = 0; pz < mapH; pz++) {
-                ctx.fill(mx+1+px, my+1+pz, mx+2+px, my+2+pz, minimapColors[pz * mapW + px]);
+            // Upload to GPU
+            if (minimapTex == null) {
+                minimapTex = new net.minecraft.client.texture.NativeImageBackedTexture(img);
+                minimapId = net.minecraft.client.MinecraftClient.getInstance()
+                        .getTextureManager()
+                        .registerDynamicTexture("skyz_minimap", minimapTex);
+            } else {
+                minimapTex.setImage(img);
+                minimapTex.upload();
             }
         }
-        ctx.disableScissor();
 
-        // \u2500\u2500 Border \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        // Single drawTexture call \u2014 one GPU draw instead of 10000 fill calls
+        if (minimapId != null) {
+            // drawTexture(id, x, y, u, v, w, h, texW, texH)
+            ctx.drawTexture(minimapId, mx+1, my+1, 0, 0, texSize, texSize, texSize, texSize);
+        }
+
+        // Border
         ctx.fill(mx, my, mx+mw, my+1, 0xFF8CD2FF);
         ctx.fill(mx, my+mh-1, mx+mw, my+mh, 0xFF8CD2FF);
         ctx.fill(mx, my, mx+1, my+mh, 0xFF8CD2FF);
         ctx.fill(mx+mw-1, my, mx+mw, my+mh, 0xFF8CD2FF);
 
-        // \u2500\u2500 Entities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        int cx = mx + mw/2, cy = my + mh/2;
+
+        // Entities
         try {
             for (net.minecraft.entity.Entity e : client.world.getEntities()) {
                 if (e == client.player) continue;
-                double ex = e.getX() - client.player.getX();
-                double ez = e.getZ() - client.player.getZ();
-                if (Math.abs(ex) > range || Math.abs(ez) > range) continue;
-                int dotX = cx + (int)(ex * (mw/2) / range);
-                int dotY = cy + (int)(ez * (mh/2) / range);
+                double ex = e.getX() - playerX;
+                double ez = e.getZ() - playerZ;
+                if (Math.abs(ex) > MINIMAP_RANGE || Math.abs(ez) > MINIMAP_RANGE) continue;
+                int dotX = cx + (int)(ex * (texSize/2) / MINIMAP_RANGE);
+                int dotY = cy + (int)(ez * (texSize/2) / MINIMAP_RANGE);
                 int col = e instanceof net.minecraft.entity.player.PlayerEntity ? 0xFFFFFF44
-                         : e instanceof net.minecraft.entity.mob.HostileEntity   ? 0xFFFF4444
-                         : 0xFF44FF44;
+                        : e instanceof net.minecraft.entity.mob.HostileEntity   ? 0xFFFF4444
+                        : 0xFF44FF44;
                 ctx.fill(dotX-1, dotY-1, dotX+2, dotY+2, col);
             }
         } catch (Exception ignored) {}
 
-        // \u2500\u2500 Player + direction arrow \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-        // MC yaw: 0=south(+Z), 90=west(-X), 180=north(-Z), 270=east(+X)
-        // On minimap: +X=right, +Z=down \u2014 matches screen coords
-        // Arrow: sin(yaw)=screen X component, +cos(yaw)=screen Y component (south = down)
+        // Player dot + direction arrow
+        // MC yaw: 0=south(+Z down), 90=west, 180=north, 270=east
         float yawRad = (float) Math.toRadians(client.player.getYaw());
-        int arrowLen = 6;
-        int ax = cx + (int)(Math.sin(yawRad) * arrowLen);
-        int ay = cy + (int)(Math.cos(yawRad) * arrowLen); // +cos not -cos: south=down
-        ctx.fill(cx-2, cy-2, cx+2, cy+2, 0xFFFFFFFF); // player dot
-        ctx.fill(ax-1, ay-1, ax+1, ay+1, 0xFFFF2222);  // arrow tip
+        int ax = cx + (int)(Math.sin(yawRad) * 6);
+        int ay = cy + (int)(Math.cos(yawRad) * 6);
+        ctx.fill(cx-2, cy-2, cx+2, cy+2, 0xFFFFFFFF);
+        ctx.fill(ax-1, ay-1, ax+1, ay+1, 0xFFFF2222);
 
-        // N label at top
+        // N label
         ctx.drawTextWithShadow(client.textRenderer, "N",
                 cx - client.textRenderer.getWidth("N")/2, my+2, 0xFFFFFFFF);
-        // Death location marker would go here in future
     }
 
-    /** Returns a map-suitable color int for a block state. */
     private int getBlockMapColor(net.minecraft.block.BlockState state) {
-        net.minecraft.block.Block block = state.getBlock();
-        // Use Minecraft's built-in map color
         try {
-            net.minecraft.block.MapColor mapColor = state.getMapColor(null, net.minecraft.util.math.BlockPos.ORIGIN);
-            if (mapColor != null && mapColor != net.minecraft.block.MapColor.CLEAR) {
-                return mapColor.color;
-            }
+            net.minecraft.block.MapColor mc = state.getMapColor(null, net.minecraft.util.math.BlockPos.ORIGIN);
+            if (mc != null && mc != net.minecraft.block.MapColor.CLEAR) return mc.color;
         } catch (Exception ignored) {}
-        // Fallback colors by block type
-        String id = net.minecraft.registry.Registries.BLOCK.getId(block).getPath();
-        if (id.contains("grass") || id.contains("lawn"))      return 0x59AE30;
-        if (id.contains("water"))                              return 0x3F76E4;
-        if (id.contains("sand") || id.contains("gravel"))     return 0xD9CC9A;
-        if (id.contains("stone") || id.contains("cobble"))    return 0x888888;
-        if (id.contains("wood") || id.contains("log"))        return 0x8B4513;
-        if (id.contains("leaf") || id.contains("leaves"))     return 0x2D7A12;
-        if (id.contains("snow") || id.contains("ice"))        return 0xDDEEFF;
-        if (id.contains("ore"))                               return 0x555555;
-        if (id.contains("lava"))                              return 0xFF6600;
-        if (id.contains("dirt"))                              return 0x8B5E3C;
-        if (id.contains("clay"))                              return 0x9B8B76;
-        if (id.contains("bedrock"))                           return 0x444444;
-        return 0x777777; // default grey
+        String id = net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).getPath();
+        if (id.contains("grass") || id.contains("lawn"))  return 0x59AE30;
+        if (id.contains("water"))                         return 0x3F76E4;
+        if (id.contains("sand") || id.contains("gravel")) return 0xD9CC9A;
+        if (id.contains("stone") || id.contains("cobble"))return 0x888888;
+        if (id.contains("wood")  || id.contains("log"))   return 0x8B4513;
+        if (id.contains("leaf")  || id.contains("leaves"))return 0x2D7A12;
+        if (id.contains("snow")  || id.contains("ice"))   return 0xDDEEFF;
+        if (id.contains("lava"))                          return 0xFF6600;
+        if (id.contains("dirt"))                          return 0x8B5E3C;
+        if (id.contains("ore"))                           return 0x555555;
+        return 0x777777;
     }
+
+    private String getBiomeName
 
     private String getBiomeName(MinecraftClient client) {
         try {

@@ -14,7 +14,7 @@ public class SkyzClientMod implements ClientModInitializer {
 
     public static final String MOD_ID = "skyz_client";
     public static final String MOD_NAME = "Skyz Client";
-    public static final String MOD_VERSION = "2.5.0";
+    public static final String MOD_VERSION = "2.7.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** Set true before ConnectScreen.connect() so TitleScreenMixin re-opens multiplayer after disconnect. */
