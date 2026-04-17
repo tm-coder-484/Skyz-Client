@@ -30,13 +30,13 @@ public class InGameHudMixin {
     // Session timer
     private static long sessionStart = 0;
 
-    // Minimap: GPU texture built once, re-uploaded only when player moves a block
-    private static net.minecraft.client.texture.NativeImageBackedTexture minimapTex = null;
-    private static net.minecraft.util.Identifier minimapId = null;
-    private static int minimapCachedX = Integer.MIN_VALUE;
-    private static int minimapCachedZ = Integer.MIN_VALUE;
-    private static int minimapTexSize = 0;
-    private static final int MINIMAP_RANGE = 48; // world blocks shown each side
+    // Minimap: cached color array, rebulit only when player moves a block
+    // Rendered as horizontal spans \u2014 far fewer draw calls than per-pixel fills
+    private static int[]  minimapColors = null;
+    private static int    minimapCachedX = Integer.MIN_VALUE;
+    private static int    minimapCachedZ = Integer.MIN_VALUE;
+    private static int    minimapTexSize = 0;
+    private static final int MINIMAP_RANGE = 32; // world blocks shown each side
 
     @Inject(method = "render", at = @At("TAIL"))
     private void skyz$render(DrawContext ctx, RenderTickCounter tick, CallbackInfo ci) {
@@ -411,25 +411,24 @@ public class InGameHudMixin {
 
     private void renderMinimap(DrawContext ctx, MinecraftClient client, net.skyz.client.util.SkyzHudState.HudElementState el) {
         int mx = el.x, my = el.y, mw = el.w, mh = el.h;
-        int texSize = Math.min(mw - 2, mh - 2);
+        // Map area is 1px inside the border
+        int mapX = mx + 1, mapY = my + 1, mapW = mw - 2, mapH = mh - 2;
+        int cx = mx + mw/2, cy = my + mh/2;
         int playerX = (int) client.player.getX();
         int playerZ = (int) client.player.getZ();
 
-        // Rebuild texture only when player moves to a new block, or first render
-        if (minimapTex == null || minimapTexSize != texSize
+        // Rebuild color cache only when player moves to a new block
+        if (minimapColors == null || minimapTexSize != mapW
                 || minimapCachedX != playerX || minimapCachedZ != playerZ) {
             minimapCachedX = playerX;
             minimapCachedZ = playerZ;
-            minimapTexSize = texSize;
-
-            // Build/rebuild the NativeImage
-            net.minecraft.client.texture.NativeImage img =
-                    new net.minecraft.client.texture.NativeImage(texSize, texSize, false);
-
-            for (int px = 0; px < texSize; px++) {
-                for (int pz = 0; pz < texSize; pz++) {
-                    int bx = (px - texSize/2) * MINIMAP_RANGE / (texSize/2);
-                    int bz = (pz - texSize/2) * MINIMAP_RANGE / (texSize/2);
+            minimapTexSize = mapW;
+            minimapColors  = new int[mapW * mapH];
+            for (int px = 0; px < mapW; px++) {
+                for (int pz = 0; pz < mapH; pz++) {
+                    // Map pixel (px, pz) to world block offset
+                    int bx = (px - mapW/2) * MINIMAP_RANGE * 2 / mapW;
+                    int bz = (pz - mapH/2) * MINIMAP_RANGE * 2 / mapH;
                     int worldX = playerX + bx;
                     int worldZ = playerZ + bz;
                     int argb = 0xFF333333;
@@ -443,7 +442,7 @@ public class InGameHudMixin {
                                 var state = client.world.getBlockState(
                                         new net.minecraft.util.math.BlockPos(worldX, topY, worldZ));
                                 int rgb = getBlockMapColor(state);
-                                int shade = Math.max(60, Math.min(255, 80 + topY + 64));
+                                int shade = Math.max(60, Math.min(255, 100 + topY));
                                 int r = (rgb >> 16 & 0xFF) * shade / 255;
                                 int g = (rgb >>  8 & 0xFF) * shade / 255;
                                 int b = (rgb       & 0xFF) * shade / 255;
@@ -452,34 +451,26 @@ public class InGameHudMixin {
                                 argb = 0xFF111111;
                             }
                         } else {
-                            argb = 0xFF222222;
+                            argb = 0xFF222222; // unloaded chunk
                         }
                     } catch (Exception ignored) {}
-                    // NativeImage uses ABGR format
-                    int a = (argb >> 24) & 0xFF;
-                    int r = (argb >> 16) & 0xFF;
-                    int g = (argb >>  8) & 0xFF;
-                    int b = (argb)       & 0xFF;
-                    img.setColor(px, pz, (a << 24) | (b << 16) | (g << 8) | r);
+                    minimapColors[pz * mapW + px] = argb;
                 }
-            }
-
-            // Upload to GPU
-            if (minimapTex == null) {
-                minimapTex = new net.minecraft.client.texture.NativeImageBackedTexture(img);
-                minimapId = net.minecraft.client.MinecraftClient.getInstance()
-                        .getTextureManager()
-                        .registerDynamicTexture("skyz_minimap", minimapTex);
-            } else {
-                minimapTex.setImage(img);
-                minimapTex.upload();
             }
         }
 
-        // Single drawTexture call \u2014 one GPU draw instead of 10000 fill calls
-        if (minimapId != null) {
-            // drawTexture(id, x, y, u, v, w, h, texW, texH)
-            ctx.drawTexture(minimapId, mx+1, my+1, 0, 0, texSize, texSize, texSize, texSize);
+        // Draw terrain: merge horizontal runs of same color \u2192 far fewer draw calls
+        for (int pz = 0; pz < mapH; pz++) {
+            int runStart = 0;
+            int runColor = minimapColors[pz * mapW];
+            for (int px = 1; px <= mapW; px++) {
+                int col = (px < mapW) ? minimapColors[pz * mapW + px] : -1;
+                if (col != runColor) {
+                    ctx.fill(mapX + runStart, mapY + pz, mapX + px, mapY + pz + 1, runColor);
+                    runStart = px;
+                    runColor = col;
+                }
+            }
         }
 
         // Border
@@ -488,26 +479,24 @@ public class InGameHudMixin {
         ctx.fill(mx, my, mx+1, my+mh, 0xFF8CD2FF);
         ctx.fill(mx+mw-1, my, mx+mw, my+mh, 0xFF8CD2FF);
 
-        int cx = mx + mw/2, cy = my + mh/2;
-
-        // Entities
+        // Entities as dots (only when cache is ready)
         try {
             for (net.minecraft.entity.Entity e : client.world.getEntities()) {
                 if (e == client.player) continue;
                 double ex = e.getX() - playerX;
                 double ez = e.getZ() - playerZ;
                 if (Math.abs(ex) > MINIMAP_RANGE || Math.abs(ez) > MINIMAP_RANGE) continue;
-                int dotX = cx + (int)(ex * (texSize/2) / MINIMAP_RANGE);
-                int dotY = cy + (int)(ez * (texSize/2) / MINIMAP_RANGE);
-                int col = e instanceof net.minecraft.entity.player.PlayerEntity ? 0xFFFFFF44
-                        : e instanceof net.minecraft.entity.mob.HostileEntity   ? 0xFFFF4444
-                        : 0xFF44FF44;
+                int dotX = cx + (int)(ex * mapW / (MINIMAP_RANGE * 2));
+                int dotY = cy + (int)(ez * mapH / (MINIMAP_RANGE * 2));
+                int col  = e instanceof net.minecraft.entity.player.PlayerEntity ? 0xFFFFFF44
+                         : e instanceof net.minecraft.entity.mob.HostileEntity   ? 0xFFFF4444
+                         : 0xFF44FF44;
                 ctx.fill(dotX-1, dotY-1, dotX+2, dotY+2, col);
             }
         } catch (Exception ignored) {}
 
         // Player dot + direction arrow
-        // MC yaw: 0=south(+Z down), 90=west, 180=north, 270=east
+        // MC yaw: 0=south(+Z=down on map), sin=X, +cos=Z(Y on screen)
         float yawRad = (float) Math.toRadians(client.player.getYaw());
         int ax = cx + (int)(Math.sin(yawRad) * 6);
         int ay = cy + (int)(Math.cos(yawRad) * 6);
@@ -537,8 +526,6 @@ public class InGameHudMixin {
         if (id.contains("ore"))                           return 0x555555;
         return 0x777777;
     }
-
-    private String getBiomeName
 
     private String getBiomeName(MinecraftClient client) {
         try {
