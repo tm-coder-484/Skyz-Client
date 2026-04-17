@@ -1,6 +1,7 @@
 package net.skyz.client.util;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.PlayerInput;
 
 /**
  * Central state for all built-in mod toggles.
@@ -59,9 +60,27 @@ public final class SkyzClientState {
     public static void tick(MinecraftClient client) {
         if (client.player == null) return;
 
-        // Fullbright - override gamma every tick
+        // Fullbright - bypass gamma range clamp via reflection
         if (fullbright) {
-            client.options.getGamma().setValue(100.0);
+            try {
+                // SimpleOption<Double> stores value in a private field
+                // Try direct setValue first (works if no range check)
+                client.options.getGamma().setValue(100.0);
+                // Verify it took - if clamped to 1.0, bypass via reflection
+                Object val = client.options.getGamma().getValue();
+                if (val instanceof Double d && d < 5.0) {
+                    // Clamped - access the backing field directly
+                    java.lang.reflect.Field[] fields = client.options.getGamma().getClass()
+                            .getDeclaredFields();
+                    for (java.lang.reflect.Field f : fields) {
+                        if (f.getType() == double.class || f.getType() == Double.class
+                                || f.getType() == Object.class) {
+                            f.setAccessible(true);
+                            try { f.set(client.options.getGamma(), 100.0); } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
         }
 
         // Toggle sprint
@@ -69,10 +88,20 @@ public final class SkyzClientState {
             client.player.setSprinting(true);
         }
 
-        // Toggle sneak - set sneaking state each tick
+        // Toggle sneak - hold sneak state persistently when toggle is ON
+        // The user disables this from the Built-in Mods tab in the HUD editor.
         if (toggleSneak) {
             client.player.setSneaking(true);
-            client.player.input.sneaking = true;
+            PlayerInput current = client.player.input.playerInput;
+            client.player.input.playerInput = new PlayerInput(
+                current.forward(),
+                current.backward(),
+                current.left(),
+                current.right(),
+                current.jump(),
+                true,
+                current.sprint()
+            );
         }
 
         // Anti-AFK - jump every 30 seconds

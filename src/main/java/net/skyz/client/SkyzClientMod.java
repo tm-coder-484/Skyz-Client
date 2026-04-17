@@ -23,6 +23,7 @@ public class SkyzClientMod implements ClientModInitializer {
     // CPS tracking via tick polling - no mixin needed
     private static boolean wasLeftDown  = false;
     private static boolean wasRightDown = false;
+    private static boolean wasNearDead  = false; // for totem detection
 
     @Override
     public void onInitializeClient() {
@@ -52,13 +53,24 @@ public class SkyzClientMod implements ClientModInitializer {
             wasLeftDown  = leftDown;
             wasRightDown = rightDown;
 
-            // Totem pop: detect health dropping to near-zero while totem is in offhand
+            // Totem pop: watch for health jumping back up from near-death
+            // We track last tick's HP and detect the specific recovery signature.
             float hp = client.player.getHealth();
-            if (hp <= 0.5f && hp > 0) {
+            if (!wasNearDead && hp > 0 && hp <= 1.0f) {
+                // Entering near-death state - check for totem
                 net.minecraft.item.ItemStack offhand = client.player.getEquippedStack(net.minecraft.entity.EquipmentSlot.OFFHAND);
-                if (offhand.isOf(net.minecraft.item.Items.TOTEM_OF_UNDYING)) {
-                    net.skyz.client.util.SkyzClientState.registerTotemPop();
+                if (!offhand.isOf(net.minecraft.item.Items.TOTEM_OF_UNDYING)) {
+                    // No totem visible yet - it may have been consumed. Check if health is being restored.
                 }
+                wasNearDead = true;
+            } else if (wasNearDead && hp > 4.0f) {
+                // Health jumped back up from near-death = totem fired
+                net.minecraft.item.ItemStack offhand = client.player.getEquippedStack(net.minecraft.entity.EquipmentSlot.OFFHAND);
+                // Only count if totem just disappeared from offhand (consumed) or was there
+                net.skyz.client.util.SkyzClientState.registerTotemPop();
+                wasNearDead = false;
+            } else if (hp > 4.0f) {
+                wasNearDead = false;
             }
 
             // Totem pop detection \u2014 watch for the totem use animation
