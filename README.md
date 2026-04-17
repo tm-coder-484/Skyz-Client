@@ -1,6 +1,6 @@
 # 🌌 Skyz Client — v2.9.0
 
-![Version](https://img.shields.io/badge/Version-2.5.0-4ab8f0?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.9.0-4ab8f0?style=for-the-badge)
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-88d4f8?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)
 
