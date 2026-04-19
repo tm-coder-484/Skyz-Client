@@ -68,13 +68,6 @@ Want to build it yourself? Check out our detailed [Build Guide](how_to_build.md)
 
 ---
 
-## 🌐 Official Portal
-
-Visit our official portal to learn more about Skyz Client and view live assets:
-👉 [https://were-bingo-blair-recommends.trycloudflare.com](https://were-bingo-blair-recommends.trycloudflare.com)
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions from the community! Whether it's a bug fix or a new feature:
