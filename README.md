@@ -7,6 +7,8 @@
 > **Look up. Fly higher.**  
 > Skyz Client is a free, open-source, and highly customizable Minecraft: Java Edition client built on Fabric. It transforms the vanilla experience with modern aesthetics, enhanced performance, and integrated utility tools.
 
+### 🌐 [View the Marketing Page →](https://tm-coder-484.github.io/Skyz-Client/)
+
 ---
 
 ## ✨ Key Features
@@ -40,7 +42,6 @@ Experience a clean, futuristic interface designed for clarity and style:
 | :---: | :---: | :---: |
 | ![Menu](.github/assets/menu.png) | ![HUD](.github/assets/hud.png) | ![Settings](.github/assets/settings.png) |
 
-
 ---
 
 ## 📥 Installation
@@ -48,7 +49,7 @@ Experience a clean, futuristic interface designed for clarity and style:
 ### ⚡ Quick Start
 1. **Download** the latest release from the [Releases](https://github.com/tm-coder-484/Skyz-Client/releases) page.
 2. **Install Fabric Loader (1.21.11)** from [fabricmc.net](https://fabricmc.net/use/installer/).
-3. **Add Fabric API** and the `skyz-client-2.5.0.jar` to your `mods` folder.
+3. **Add Fabric API** and the `skyz-client-2.9.0.jar` to your `mods` folder.
 4. **Launch** and enjoy!
 
 ### 🛠️ For Developers (Building from Source)
