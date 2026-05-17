@@ -16,6 +16,8 @@ repositories {
         name = "Terraformers"
         url  = "https://maven.terraformersmc.com/"
     }
+    maven { url 'https://maven.wispforest.io/releases/' }
+    maven { url 'https://jitpack.io' }
     mavenCentral()
 }
 
@@ -27,6 +29,25 @@ dependencies {
 
     // Mod Menu - compile-only so the mod doesn't require it at runtime
     modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    // owo-lib — XML-driven UI framework. modImplementation is required at
+    // runtime; sentinel ships as Jar-in-Jar so end users don't need a
+    // separate owo-lib install.
+    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    include            "io.wispforest:owo-sentinel:${project.owo_version}"
+}
+
+// Force-pin fabric-api and fabric-loader. Loom 1.15.3 likes to upgrade
+// these transitively, which on 1.21.11 pulls in fabric-api 0.141.2 whose
+// LiquidBlockRendererMixin uses MixinExtras EXPRESSION (added in 0.5+).
+// Fabric Loader 0.18.x bundles MixinExtras 0.4.1, so the mixin fails to
+// apply and floods the log with a stack trace during resource reload.
+// Pinning fabric-api back to the version we declare avoids the mismatch.
+configurations.all {
+    resolutionStrategy {
+        force "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+        force "net.fabricmc:fabric-loader:${project.loader_version}"
+    }
 }
 
 processResources {

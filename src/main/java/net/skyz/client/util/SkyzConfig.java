@@ -61,6 +61,33 @@ public final class SkyzConfig {
             // Theme
             root.addProperty("theme", SkyzTheme.getCurrent());
 
+            // ESP & Hacks
+            root.addProperty("spawnerAlert",      SkyzClientState.spawnerAlert);
+            root.addProperty("espRange",          SkyzClientState.espRange);
+            JsonObject blockEspGroups = new JsonObject();
+            for (SkyzClientState.BlockEspGroup g : SkyzClientState.BLOCK_ESP_GROUPS) {
+                blockEspGroups.addProperty(g.name, g.enabled);
+            }
+            root.add("blockEspGroups", blockEspGroups);
+            root.addProperty("storageEsp",        SkyzClientState.storageEsp);
+            root.addProperty("playerEsp",         SkyzClientState.playerEsp);
+            root.addProperty("itemEsp",           SkyzClientState.itemEsp);
+            root.addProperty("blockEsp",          SkyzClientState.blockEsp);
+            root.addProperty("mobEsp",            SkyzClientState.mobEsp);
+            root.addProperty("oreHighlighter",    SkyzClientState.oreHighlighter);
+            root.addProperty("autoTotem",         SkyzClientState.autoTotem);
+            root.addProperty("trajectories",      SkyzClientState.trajectories);
+            root.addProperty("chatTimestamps",    SkyzClientState.chatTimestamps);
+            root.addProperty("dynamicFps",        SkyzClientState.dynamicFps);
+            root.addProperty("particleLimiter",   SkyzClientState.particleLimiter);
+            root.addProperty("autoclickerCps",    SkyzClientState.autoclickerCps);
+
+            // Minimap settings
+            root.addProperty("minimapShowLeaves",   SkyzClientState.minimapShowLeaves);
+            root.addProperty("minimapCaveMode",      SkyzClientState.minimapCaveMode);
+            root.addProperty("minimapShowEntities",  SkyzClientState.minimapShowEntities);
+            root.addProperty("minimapZoom",          SkyzClientState.minimapZoom);
+
             Path cfg = getConfigPath();
             Files.createDirectories(cfg.getParent());
             Files.writeString(cfg, GSON.toJson(root));
@@ -108,6 +135,30 @@ public final class SkyzConfig {
             if (root.has("toggleChat"))      SkyzClientState.toggleChat      = root.get("toggleChat").getAsBoolean();
             if (root.has("fovMultiplier"))   SkyzClientState.fovMultiplier   = root.get("fovMultiplier").getAsFloat();
             if (root.has("theme"))           SkyzTheme.apply(root.get("theme").getAsInt());
+            if (root.has("spawnerAlert"))     SkyzClientState.spawnerAlert     = root.get("spawnerAlert").getAsBoolean();
+            if (root.has("espRange"))         SkyzClientState.espRange         = Math.max(4, Math.min(32, root.get("espRange").getAsInt()));
+            if (root.has("blockEspGroups")) {
+                JsonObject blockEspGroups = root.getAsJsonObject("blockEspGroups");
+                for (SkyzClientState.BlockEspGroup g : SkyzClientState.BLOCK_ESP_GROUPS) {
+                    if (blockEspGroups.has(g.name)) g.enabled = blockEspGroups.get(g.name).getAsBoolean();
+                }
+            }
+            if (root.has("storageEsp"))       SkyzClientState.storageEsp       = root.get("storageEsp").getAsBoolean();
+            if (root.has("playerEsp"))        SkyzClientState.playerEsp        = root.get("playerEsp").getAsBoolean();
+            if (root.has("itemEsp"))          SkyzClientState.itemEsp          = root.get("itemEsp").getAsBoolean();
+            if (root.has("blockEsp"))         SkyzClientState.blockEsp         = root.get("blockEsp").getAsBoolean();
+            if (root.has("mobEsp"))           SkyzClientState.mobEsp           = root.get("mobEsp").getAsBoolean();
+            if (root.has("oreHighlighter"))   SkyzClientState.oreHighlighter   = root.get("oreHighlighter").getAsBoolean();
+            if (root.has("autoTotem"))        SkyzClientState.autoTotem        = root.get("autoTotem").getAsBoolean();
+            if (root.has("trajectories"))     SkyzClientState.trajectories     = root.get("trajectories").getAsBoolean();
+            if (root.has("chatTimestamps"))   SkyzClientState.chatTimestamps   = root.get("chatTimestamps").getAsBoolean();
+            if (root.has("dynamicFps"))       SkyzClientState.dynamicFps       = root.get("dynamicFps").getAsBoolean();
+            if (root.has("particleLimiter"))  SkyzClientState.particleLimiter  = root.get("particleLimiter").getAsBoolean();
+            if (root.has("autoclickerCps"))   SkyzClientState.autoclickerCps   = root.get("autoclickerCps").getAsInt();
+            if (root.has("minimapShowLeaves"))  SkyzClientState.minimapShowLeaves  = root.get("minimapShowLeaves").getAsBoolean();
+            if (root.has("minimapCaveMode"))     SkyzClientState.minimapCaveMode     = root.get("minimapCaveMode").getAsBoolean();
+            if (root.has("minimapShowEntities")) SkyzClientState.minimapShowEntities = root.get("minimapShowEntities").getAsBoolean();
+            if (root.has("minimapZoom"))         SkyzClientState.minimapZoom         = root.get("minimapZoom").getAsInt();
 
             return true;
         } catch (Exception e) {

@@ -1,0 +1,190 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Multiplayer screen — owo-lib edition (Phase 2b port).
+
+      Note: owo's id is parsed from the XML attribute `id="..."`, NOT from a
+      child <id> element. The first iteration of this file used the wrong
+      form, so childById() lookups returned null and the screen rendered an
+      empty list. Keep all ids as attributes here.
+
+      Right-aligning the back button + count label uses owo's <spacer>
+      component (Sizing.expand) — a flow-layout with fill(100) tries to take
+      the entire parent width and squashes its siblings.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>MULTIPLAYER</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Action row ──────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>10</gap>
+                    <children>
+                        <button id="btn-add-server">
+                            <text>+  ADD SERVER</text>
+                            <sizing>
+                                <horizontal method="fill">68</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-direct-connect">
+                            <text>⚡  DIRECT CONNECT</text>
+                            <sizing>
+                                <horizontal method="fill">30</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Toolbar (search + filters + count) ──────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <!-- Search uses expand so it absorbs leftover; fixed widths
+                             on filter buttons stay tight to their text so the row
+                             doesn't overflow at GUI scale 4. -->
+                        <flow-layout id="search-wrapper" direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                            <padding>
+                                <horizontal>8</horizontal>
+                                <vertical>2</vertical>
+                            </padding>
+                            <vertical-alignment>center</vertical-alignment>
+                            <children>
+                                <text-box id="tb-search">
+                                    <sizing>
+                                        <horizontal method="fill">100</horizontal>
+                                    </sizing>
+                                </text-box>
+                            </children>
+                        </flow-layout>
+                        <button id="btn-filter-all">
+                            <text>ALL</text>
+                            <sizing>
+                                <horizontal method="fixed">40</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-fav">
+                            <text>FAVOURITES</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-refresh">
+                            <text>🔄  REFRESH</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <label id="lbl-count">
+                            <text>0 servers</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Server list (populated in build()) ──────────────── -->
+                <!--
+                  ScrollContainer (WrappingParentUIComponent) finds its wrapped
+                  child via allChildrenOfType(...).get(0), so the inner
+                  flow-layout MUST come BEFORE any property elements like
+                  <sizing>. Property elements are looked up by tag name in a
+                  map, so document order doesn't affect them.
+
+                  Vertical fill makes the scroll viewport claim all leftover
+                  space after the nav/action/toolbar rows (those use
+                  vertical method=content). The right padding inside the
+                  inner flow leaves room for the scrollbar so it doesn't
+                  overlap the card edge.
+                -->
+                <scroll direction="vertical" id="scroll-server-list">
+                    <flow-layout id="server-list" direction="vertical">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                            <vertical method="content"/>
+                        </sizing>
+                        <gap>5</gap>
+                        <padding>
+                            <right>6</right>
+                        </padding>
+                    </flow-layout>
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="fill">100</vertical>
+                    </sizing>
+                    <scrollbar-thiccness>4</scrollbar-thiccness>
+                    <!-- scroll-step matches one card height (54) + gap (5) so
+                         each wheel tick advances exactly one card. The earlier
+                         value 22 was less than half a card, which made the
+                         scroll feel janky / "broken" — items moved by tiny
+                         increments instead of snapping cleanly. -->
+                    <scroll-step>60</scroll-step>
+                </scroll>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

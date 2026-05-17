@@ -1,0 +1,72 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Progress Screen — replaces vanilla ProgressScreen.
+
+      Used during world saves, resource pack reloads, and other
+      long-running operations. The vanilla ProgressScreen implements
+      ProgressListener — title, task, and percentage are pushed in by
+      the operation as it runs. The mixin tracks the vanilla shadow
+      fields and pushes them to the Skyz screen each render frame so we
+      always show fresh values.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+
+            <children>
+                <flow-layout id="card" direction="vertical">
+                    <sizing>
+                        <horizontal method="fixed">360</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <padding>
+                        <top>22</top>
+                        <bottom>26</bottom>
+                        <left>20</left>
+                        <right>20</right>
+                    </padding>
+                    <gap>6</gap>
+                    <horizontal-alignment>center</horizontal-alignment>
+
+                    <children>
+                        <label id="lbl-title">
+                            <text>Working...</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label id="lbl-task">
+                            <text>...</text>
+                            <color>#CCB0D8FF</color>
+                            <horizontal-text-alignment>center</horizontal-text-alignment>
+                            <margins>
+                                <bottom>10</bottom>
+                            </margins>
+                        </label>
+                        <!--
+                          Progress bar drawn manually in render() (Java).
+                          We reserve a 320×8 placeholder for spacing here.
+                        -->
+                        <flow-layout id="bar-placeholder" direction="horizontal">
+                            <sizing>
+                                <horizontal method="fixed">320</horizontal>
+                                <vertical method="fixed">8</vertical>
+                            </sizing>
+                        </flow-layout>
+                        <label id="lbl-pct">
+                            <text>0%</text>
+                            <color>#FF8CD2FF</color>
+                            <margins>
+                                <top>4</top>
+                            </margins>
+                        </label>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

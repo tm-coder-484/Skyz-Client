@@ -1,0 +1,44 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <templates>
+        <!--
+          .act-btn: short rounded glass button used in cards (Edit / Open / Join).
+          Three variants matching the HTML's .primary and .danger.
+        -->
+        <template name="act-btn">
+            <button id="{{id|}}">
+                <text>{{label}}</text>
+                <sizing>
+                    <horizontal method="content"/>
+                    <vertical method="fixed">18</vertical>
+                </sizing>
+                <padding><horizontal>10</horizontal><vertical>2</vertical></padding>
+                <horizontal-text-alignment>center</horizontal-text-alignment>
+            </button>
+        </template>
+        <template name="act-btn-primary">
+            <button id="{{id|}}">
+                <text>{{label}}</text>
+                <sizing>
+                    <horizontal method="content"/>
+                    <vertical method="fixed">18</vertical>
+                </sizing>
+                <padding><horizontal>10</horizontal><vertical>2</vertical></padding>
+                <color>0xFFA0DCFF</color>
+                <horizontal-text-alignment>center</horizontal-text-alignment>
+            </button>
+        </template>
+        <template name="act-btn-danger">
+            <button id="{{id|}}">
+                <text>{{label}}</text>
+                <sizing>
+                    <horizontal method="content"/>
+                    <vertical method="fixed">18</vertical>
+                </sizing>
+                <padding><horizontal>10</horizontal><vertical>2</vertical></padding>
+                <color>0xFFFFA0A0</color>
+                <horizontal-text-alignment>center</horizontal-text-alignment>
+            </button>
+        </template>
+    </templates>
+</owo-ui>

@@ -1,472 +1,804 @@
 package net.skyz.client.screen;
 
+import io.wispforest.owo.ui.base.BaseUIModelScreen;
+import io.wispforest.owo.ui.component.ButtonComponent;
+import io.wispforest.owo.ui.component.LabelComponent;
+import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.ScrollContainer;
+import io.wispforest.owo.ui.container.UIContainers;
+import io.wispforest.owo.ui.component.UIComponents;
+import io.wispforest.owo.ui.core.Color;
+import io.wispforest.owo.ui.core.HorizontalAlignment;
+import io.wispforest.owo.ui.core.Insets;
+import io.wispforest.owo.ui.core.Positioning;
+import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.Surface;
+import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.input.CharInput;
 import net.minecraft.text.Text;
-import net.skyz.client.util.*;
+import net.minecraft.util.Identifier;
+import net.skyz.client.SkyzClientMod;
+import net.skyz.client.util.SkyzClientState;
+import net.skyz.client.util.SkyzColors;
+import net.skyz.client.util.SkyzConfig;
+import net.skyz.client.util.SkyzHudState;
+import net.skyz.client.util.SkyzRenderHelper;
+
+import java.util.List;
 
 /**
- * HUD Editor \u2014 two tabs inside a collapsible sidebar:
- *   Tab 0: HUD Elements  (drag-to-place, enable/disable, scrollable)
- *   Tab 1: Built-in Mods (toggles/sliders, scrollable)
+ * Skyz HUD Editor — owo-lib edition (Phase 2c port).
  *
- * The sidebar can be toggled open/closed with the [ ] button so the full
- * screen preview area is accessible for placing elements on the right side.
+ * Two-pane layout: a fake-game preview on the left where the user drags HUD
+ * elements around, and a sidebar on the right with two tabs:
+ *   <ol>
+ *     <li>HUD Elements — per-element enable pills + click-to-select</li>
+ *     <li>Built-in Mods — toggles + sliders for QoL/visual mods</li>
+ *   </ol>
+ *
+ * <h3>Why partial owo, partial Java render</h3>
+ *
+ * The screen chrome (top "← BACK" + bottom toolbar) and the entire sidebar
+ * (tab strip, scrollable lists, all rows) are owo components defined by
+ * {@code assets/skyz_client/owo_ui/hud_editor.xml} + programmatic
+ * construction in {@link #buildSidebar()}. This buys us the same Skyz button
+ * styling, hover halos, and consistent layout as the rest of the ported
+ * screens.
+ *
+ * The preview area, however, is rendered manually in {@link #render(DrawContext, int, int, float)}
+ * because each HUD element has free-form (x, y, w, h) coordinates the user
+ * sets by dragging. owo's flow / grid / stack layouts can't model that — and
+ * the element previews need to read the same {@code SkyzHudState.ELEMENTS}
+ * that the in-game HUD renderer uses, so we keep them as direct DrawContext
+ * calls. Drag-and-drop lives in {@link #mouseClicked} / {@link #mouseDragged}
+ * / {@link #mouseReleased}, which give super.mouseClicked() priority so owo
+ * components (back, tab strip, toolbar buttons) get clicks first.
+ *
+ * <h3>Sidebar collapse</h3>
+ *
+ * The {@code [◄] / [▶]} button toggles {@link #sidebarOpen}. On toggle we
+ * tear down and rebuild the sidebar component tree (cheap — only ~50 owo
+ * components) and reposition it. When closed it shrinks to a 22-px strip
+ * containing only the toggle button so the user can place HUD elements over
+ * the right edge of the preview.
+ *
+ * @see SkyzHudState
+ * @see SkyzClientState
  */
-public class SkyzHudEditorScreen extends Screen {
+public class SkyzHudEditorScreen extends BaseUIModelScreen<FlowLayout> {
 
-    private final SkyzTitleScreen parent;
-    private java.util.List<SkyzHudState.HudElementState> elements;
+    // ─── Layout constants ────────────────────────────────────────────────
+    private static final int SIDEBAR_W      = 196;   // visible content width
+    private static final int SIDEBAR_PAD    = 8;     // gutter for scrollbar
+    private static final int SIDEBAR_FULL_W = SIDEBAR_W + SIDEBAR_PAD;
+    private static final int SIDEBAR_STRIP  = 22;    // collapsed-sidebar width
+    private static final int BOTTOM_BAR_H   = 26;
+    private static final int TOP_BAR_H      = 26;
 
-    // Dragging
-    private SkyzHudState.HudElementState selected = null;
-    private SkyzHudState.HudElementState dragging  = null;
-    private int dragOffX, dragOffY;
-
-    // Layout
-    private static final int SIDEBAR_W = 196;
-    private static final int PAD       = 8;
-    private boolean sidebarOpen = true;
-
-    // Snap grid \u2014 cycle through sizes with a button
     private static final int[] GRIDS = {4, 8, 16, 32};
-    private int gridIdx = 1; // default = 8
-    private boolean snapEnabled = true;
-    private int snapGrid() { return GRIDS[gridIdx]; }
 
-    // Tabs
-    private int activeTab  = 0;
-    private int hudScroll  = 0;
-    private int modsScroll = 0;
-
-    private static final String[] TABS = {"HUD Elements", "Built-in Mods"};
-    private static final int EL_ROW  = 22;
-    private static final int MOD_ROW = 42;
-
+    // ─── Built-in Mods table (mirrored from old screen) ──────────────────
+    // {label, description, stateField, type}
+    // Special types: HEADER (divider), WARN (red banner)
     private static final String[][] MODS = {
+        {"__HEADER__",       "OTHER BUILT-IN MODS",                "",                "HEADER"},
         {"Toggle Sprint",    "Auto-sprint when moving forward",    "toggleSprint",    "toggle"},
-        {"Toggle Sneak",     "Hold sneak without holding key",      "toggleSneak",     "toggle"},
-        {"Fullbright",       "Max gamma - see in the dark",         "fullbright",      "toggle"},
-        {"No Fog",           "Remove fog distance",                 "noFog",           "toggle"},
-        {"No Pumpkin Blur",  "Remove pumpkin head overlay",         "noPumpkinBlur",   "toggle"},
-        {"Anti-AFK",         "Micro-movement vs AFK kicks",         "antiAfk",         "toggle"},
-        {"Auto GG",          "Type 'gg' after game ends",           "autoGG",          "toggle"},
-        {"No Fire Overlay",  "Remove fire screen effect",           "noFireOverlay",   "toggle"},
-        {"Colored Hitboxes", "Show entity hitboxes with color",     "coloredHitboxes", "toggle"},
-        {"Toggle Chat",      "Toggle chat visibility",              "toggleChat",      "toggle"},
-        {"FOV Changer",      "Adjust FOV 0.5\u00d7\u20132.0\u00d7", "fovMultiplier",  "slider"},
+        {"Toggle Sneak",     "Hold sneak without holding key",     "toggleSneak",     "toggle"},
+        {"Fullbright",       "Max gamma — see in the dark",        "fullbright",      "toggle"},
+        {"No Fog",           "Remove fog distance",                "noFog",           "toggle"},
+        {"No Pumpkin Blur",  "Remove pumpkin head overlay",        "noPumpkinBlur",   "toggle"},
+        {"Anti-AFK",         "Micro-movement vs AFK kicks",        "antiAfk",         "toggle"},
+        {"Auto GG",          "Type 'gg' after game ends",          "autoGG",          "toggle"},
+        {"No Fire Overlay",  "Remove fire screen effect",          "noFireOverlay",   "toggle"},
+        {"Colored Hitboxes", "Show entity hitboxes with color",    "coloredHitboxes", "toggle"},
+        {"Toggle Chat",      "Toggle chat visibility",             "toggleChat",      "toggle"},
+        {"Chat Timestamps",  "Show time on each chat message",     "chatTimestamps",  "toggle"},
+        {"Dynamic FPS",      "Limit FPS when tabbed or AFK",       "dynamicFps",      "toggle"},
+        {"Particle Limiter", "Reduce particles for performance",   "particleLimiter", "toggle"},
+        {"FOV Changer",      "Adjust FOV 0.5×–2.0×",               "fovMultiplier",   "slider"},
+        {"Autoclicker CPS",  "Auto-click rate (toggle in keybinds)","autoclickerCps", "slider"},
+        {"__WARN__",         "HACKS — USE AT YOUR OWN RISK",       "",                "WARN"},
+        {"Storage ESP",      "Chests/barrels/spawners thru walls", "storageEsp",      "toggle"},
+        {"Player ESP",       "Players visible through walls",      "playerEsp",       "toggle"},
+        {"Item ESP",         "Item hitboxes through walls",        "itemEsp",         "toggle"},
+        {"Block ESP",        "Configurable block highlight",       "blockEsp",        "toggle"},
+        {"Mob ESP",          "Mob outlines through walls",         "mobEsp",          "toggle"},
+        {"Ore Highlighter",  "Highlight ores through stone",       "oreHighlighter",  "toggle"},
+        {"Auto Totem",       "Auto-swap totem to offhand",         "autoTotem",       "toggle"},
+        {"Trajectories",     "Show bow/pearl/rod paths",           "trajectories",    "toggle"},
     };
 
+    // ─── Surfaces ────────────────────────────────────────────────────────
+    /**
+     * Sidebar background — near-opaque dark panel with a left accent line.
+     * Originally 0xD8 alpha, but HUD-element previews drawn behind it bled
+     * through visibly. Bumped to 0xF6 — still has a touch of glass feel
+     * without showing through to the preview underneath.
+     */
+    private static final Surface SIDEBAR_SURFACE = (ctx, comp) -> {
+        int x = comp.x(), y = comp.y(), w = comp.width(), h = comp.height();
+        SkyzRenderHelper.fillRoundedRect(ctx, x, y, w, h, 6, 0xF6050F2A);
+        SkyzRenderHelper.drawRoundedBorder(ctx, x, y, w, h, 6, 0x448CD2FF);
+        // Left edge accent
+        ctx.fill(x, y + 6, x + 1, y + h - 6, 0x778CD2FF);
+    };
+
+    /** Bottom toolbar background — same Skyz glass tint, no left accent. */
+    private static final Surface BOTTOM_BAR_SURFACE = (ctx, comp) -> {
+        int x = comp.x(), y = comp.y(), w = comp.width(), h = comp.height();
+        SkyzRenderHelper.fillRoundedRect(ctx, x, y, w, h, 0, 0xCC050F2A);
+        // Top accent line
+        ctx.fill(x, y, x + w, y + 1, 0x338CD2FF);
+    };
+
+    /** Section header (HUD Elements categories). */
+    private static final Surface SECTION_HEADER_SURFACE = (ctx, comp) -> {
+        int x = comp.x(), y = comp.y(), w = comp.width(), h = comp.height();
+        ctx.fill(x, y, x + w, y + h, 0x11FFFFFF);
+        // Subtle bottom underline
+        ctx.fill(x + 4, y + h - 1, x + w - 4, y + h, 0x338CD2FF);
+    };
+
+    /** Warning banner (HACKS section). */
+    private static final Surface WARN_SURFACE = (ctx, comp) -> {
+        int x = comp.x(), y = comp.y(), w = comp.width(), h = comp.height();
+        ctx.fill(x, y, x + w, y + h, 0x44440000);
+        ctx.fill(x, y, x + w, y + 1, 0xAAFF4444);
+        ctx.fill(x, y + h - 1, x + w, y + h, 0xAAFF4444);
+    };
+
+    /** Per-row hover surface for HUD-element rows. */
+    private static final Surface ROW_SURFACE = (ctx, comp) -> {
+        int x = comp.x(), y = comp.y(), w = comp.width(), h = comp.height();
+        if (comp.isInBoundingBox(comp.x() + w / 2.0, comp.y() + h / 2.0)) {
+            ctx.fill(x, y, x + w, y + h, 0x11091E46);
+        }
+    };
+
+    // ─── State ───────────────────────────────────────────────────────────
+    private final SkyzTitleScreen parent;
+    private List<SkyzHudState.HudElementState> elements;
+
+    private SkyzHudState.HudElementState selected = null;
+    private SkyzHudState.HudElementState dragging = null;
+    private int dragOffX, dragOffY;
+
+    private int     gridIdx     = 1;     // → GRIDS[1] == 8
+    private boolean snapEnabled = true;
+    private int     activeTab   = 0;     // 0 = HUD elements, 1 = Built-in mods
+    private boolean sidebarOpen = true;
+
+    // owo refs (resolved in build())
+    private FlowLayout      rootRef;
+    private FlowLayout      sidebar;
+    private FlowLayout      tabContent;
+    private ButtonComponent tab0Btn, tab1Btn;
+    private LabelComponent  snapLabel;
+    private ButtonComponent gridBtn, snapToggleBtn;
+
     public SkyzHudEditorScreen(SkyzTitleScreen parent) {
-        super(Text.literal("HUD Editor"));
+        super(FlowLayout.class, Identifier.of("skyz_client", "hud_editor"));
         this.parent = parent;
     }
 
+    // ─── Build (called on screen open + resize) ──────────────────────────
     @Override
-    protected void init() {
-        if (!SkyzHudState.initialized)
-            SkyzHudState.initDefaults(width, height);
+    protected void build(FlowLayout root) {
+        this.rootRef = root;
+
+        if (!SkyzHudState.initialized) SkyzHudState.initDefaults(width, height);
         elements = SkyzHudState.ELEMENTS;
 
-        addDrawableChild(SkyzButton.of(width - 70, 4, 64, 18, "\u2190 Back",
-                () -> client.setScreen(parent)));
+        // ── Chrome buttons ──
+        wire(root, "btn-back",        () -> client.setScreen(parent),   SkyzButtonRenderer.NAV_BACK);
+        wire(root, "btn-grid",        this::cycleGrid,                  SkyzButtonRenderer.NAV_BACK);
+        wire(root, "btn-snap-toggle", this::toggleSnap,                 SkyzButtonRenderer.NAV_BACK);
+        wire(root, "btn-save",        this::doSave,                     SkyzButtonRenderer.DEFAULT);
+        wire(root, "btn-reset",       this::doReset,                    SkyzButtonRenderer.QUIT);
+
+        // ── Resolve refs for live label updates ──
+        snapLabel     = root.childById(LabelComponent.class,  "lbl-snap");
+        gridBtn       = root.childById(ButtonComponent.class, "btn-grid");
+        snapToggleBtn = root.childById(ButtonComponent.class, "btn-snap-toggle");
+
+        FlowLayout bottomBar = root.childById(FlowLayout.class, "bottom-bar");
+        if (bottomBar != null) bottomBar.surface(BOTTOM_BAR_SURFACE);
+
+        // ── Sidebar (programmatic, absolute-positioned over the root) ──
+        sidebar = buildSidebar();
+        applySidebarPositioning();
+        root.child(sidebar);
+
+        rebuildTabContent();
+        updateChromeLabels();
+
+        SkyzClientMod.LOGGER.info("[Skyz] HUD Editor built. Sidebar open={}, tab={}, elements={}.",
+                sidebarOpen, activeTab, elements.size());
     }
 
-    // \u2500\u2500 Sidebar geometry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-    /** X coordinate where the sidebar starts. */
-    private int sidebarX() { return sidebarOpen ? width - SIDEBAR_W - PAD : width - 26; }
-    /** Width of the usable preview area (full screen when sidebar closed). */
-    private int previewW()  { return sidebarOpen ? width - SIDEBAR_W - PAD : width; }
+    private void wire(FlowLayout root, String id, Runnable action,
+                      ButtonComponent.Renderer renderer) {
+        ButtonComponent btn = root.childById(ButtonComponent.class, id);
+        if (btn == null) {
+            SkyzClientMod.LOGGER.warn("[Skyz] HUD Editor: button id '{}' not found.", id);
+            return;
+        }
+        btn.onPress(b -> action.run());
+        btn.renderer(renderer);
+    }
 
-    // \u2500\u2500 Render \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // ─── Sidebar construction ────────────────────────────────────────────
+    private FlowLayout buildSidebar() {
+        // Height leaves a gap from bottom-bar so it doesn't overlap.
+        int sideH = Math.max(60, height - TOP_BAR_H - BOTTOM_BAR_H - 4);
+
+        FlowLayout side = UIContainers.verticalFlow(
+                Sizing.fixed(sidebarOpen ? SIDEBAR_FULL_W : SIDEBAR_STRIP),
+                Sizing.fixed(sideH));
+        side.padding(Insets.of(4, 4, 4, 4));
+        side.gap(4);
+        side.surface(SIDEBAR_SURFACE);
+
+        // Collapse / expand button (same row across both states).
+        FlowLayout topRow = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        topRow.verticalAlignment(VerticalAlignment.CENTER);
+        ButtonComponent toggleBtn = UIComponents
+                .button(Text.literal(sidebarOpen ? "◄" : "▶"), b -> toggleSidebar())
+                .renderer(SkyzButtonRenderer.NAV_BACK);
+        toggleBtn.horizontalSizing(Sizing.fixed(sidebarOpen ? 22 : 14));
+        toggleBtn.verticalSizing(Sizing.fixed(18));
+        topRow.child(toggleBtn);
+
+        if (sidebarOpen) {
+            // ── Tab strip ──
+            tab0Btn = UIComponents
+                    .button(Text.literal("HUD Elements"), b -> setActiveTab(0))
+                    .renderer(activeTab == 0 ? SkyzButtonRenderer.DEFAULT : SkyzButtonRenderer.NAV_BACK);
+            tab0Btn.horizontalSizing(Sizing.fixed(86));
+            tab0Btn.verticalSizing(Sizing.fixed(18));
+
+            tab1Btn = UIComponents
+                    .button(Text.literal("Built-in Mods"), b -> setActiveTab(1))
+                    .renderer(activeTab == 1 ? SkyzButtonRenderer.DEFAULT : SkyzButtonRenderer.NAV_BACK);
+            tab1Btn.horizontalSizing(Sizing.fixed(86));
+            tab1Btn.verticalSizing(Sizing.fixed(18));
+
+            FlowLayout tabRow = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.content());
+            tabRow.gap(2);
+            tabRow.margins(Insets.left(4));
+            tabRow.child(tab0Btn);
+            tabRow.child(tab1Btn);
+            topRow.child(tabRow);
+        }
+        side.child(topRow);
+
+        if (sidebarOpen) {
+            tabContent = UIContainers.verticalFlow(Sizing.fill(100), Sizing.content());
+            tabContent.gap(4);
+
+            ScrollContainer<?> scroll = UIContainers.verticalScroll(
+                    Sizing.fill(100), Sizing.expand(100), tabContent);
+            scroll.scrollbar(ScrollContainer.Scrollbar.flat(Color.ofArgb(0xCC8CD2FF)));
+            scroll.scrollbarThiccness(3);
+            scroll.scrollStep(20);
+            side.child(scroll);
+        }
+
+        return side;
+    }
+
+    private void applySidebarPositioning() {
+        if (sidebar == null) return;
+        int x = sidebarOpen
+                ? width - SIDEBAR_FULL_W - 4
+                : width - SIDEBAR_STRIP - 4;
+        sidebar.positioning(Positioning.absolute(x, TOP_BAR_H + 2));
+    }
+
+    private void toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        if (sidebar != null && rootRef != null) {
+            rootRef.removeChild(sidebar);
+            sidebar = buildSidebar();
+            applySidebarPositioning();
+            rootRef.child(sidebar);
+            if (sidebarOpen) rebuildTabContent();
+        }
+    }
+
+    private void setActiveTab(int tab) {
+        if (tab == activeTab) return;
+        activeTab = tab;
+        if (tab0Btn != null) tab0Btn.renderer(activeTab == 0 ? SkyzButtonRenderer.DEFAULT : SkyzButtonRenderer.NAV_BACK);
+        if (tab1Btn != null) tab1Btn.renderer(activeTab == 1 ? SkyzButtonRenderer.DEFAULT : SkyzButtonRenderer.NAV_BACK);
+        rebuildTabContent();
+    }
+
+    private void rebuildTabContent() {
+        if (tabContent == null) return;
+        tabContent.clearChildren();
+        if (activeTab == 0) populateHudTab();
+        else                populateModsTab();
+    }
+
+    // ─── HUD Elements tab ────────────────────────────────────────────────
+    private void populateHudTab() {
+        String lastCat = "";
+        for (SkyzHudState.HudElementState el : elements) {
+            if (!el.category.equals(lastCat)) {
+                lastCat = el.category;
+                tabContent.child(buildSectionHeader(catLabel(lastCat)));
+            }
+            tabContent.child(buildHudRow(el));
+        }
+
+        // ── Snap to grid toggle ──
+        tabContent.child(buildSectionHeader("OPTIONS"));
+        tabContent.child(buildToggleRowDirect(
+                "Snap to grid",
+                "Aligns dragged elements to the grid",
+                snapEnabled,
+                v -> {
+                    snapEnabled = v;
+                    updateChromeLabels();
+                }));
+
+        // ── Vanilla suppression ──
+        tabContent.child(buildSectionHeader("REPLACE VANILLA"));
+        tabContent.child(buildToggleRowDirect(
+                "Hide vanilla Health",
+                "Use Skyz health bar instead",
+                SkyzHudState.hideVanillaHealth,
+                v -> SkyzHudState.hideVanillaHealth = v));
+        tabContent.child(buildToggleRowDirect(
+                "Hide vanilla Hunger",
+                "Use Skyz hunger bar instead",
+                SkyzHudState.hideVanillaHunger,
+                v -> SkyzHudState.hideVanillaHunger = v));
+        tabContent.child(buildToggleRowDirect(
+                "Hide vanilla Armor",
+                "Use Skyz armor bar instead",
+                SkyzHudState.hideVanillaArmor,
+                v -> SkyzHudState.hideVanillaArmor = v));
+
+        // Selected element info card.
+        if (selected != null) {
+            FlowLayout card = UIContainers.verticalFlow(Sizing.fill(100), Sizing.content());
+            card.padding(Insets.of(4, 4, 6, 6));
+            card.surface(SkyzSurface.CARD);
+            card.margins(Insets.top(4));
+            card.gap(2);
+            card.child(UIComponents.label(Text.literal(selected.name))
+                    .color(Color.ofArgb(0xFF8CD2FF)));
+            card.child(UIComponents.label(Text.literal("X " + selected.x + "  Y " + selected.y))
+                    .color(Color.ofArgb(SkyzColors.TEXT_MUTED)));
+            tabContent.child(card);
+        }
+    }
+
+    private FlowLayout buildSectionHeader(String text) {
+        FlowLayout hdr = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.fixed(13));
+        hdr.padding(Insets.of(2, 2, 6, 4));
+        hdr.verticalAlignment(VerticalAlignment.CENTER);
+        hdr.surface(SECTION_HEADER_SURFACE);
+        hdr.child(UIComponents.label(Text.literal(text))
+                .color(Color.ofArgb(0xCC8CD2FF)));
+        return hdr;
+    }
+
+    private FlowLayout buildHudRow(SkyzHudState.HudElementState el) {
+        FlowLayout row = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.fixed(20));
+        row.padding(Insets.of(2, 2, 6, 6));
+        row.gap(6);
+        row.verticalAlignment(VerticalAlignment.CENTER);
+
+        ButtonComponent pill = makePill(el.enabled, v -> {
+            el.enabled = v;
+            // The pill rebuild swaps the renderer + label, no row rebuild needed.
+        });
+        row.child(pill);
+
+        row.child(UIComponents.label(Text.literal(el.icon))
+                .color(Color.ofArgb(0xFFFFFFFF))
+                .horizontalSizing(Sizing.fixed(12)));
+
+        LabelComponent name = UIComponents.label(Text.literal(el.name));
+        name.color(Color.ofArgb(el.enabled ? SkyzColors.TEXT_PRIMARY : SkyzColors.TEXT_MUTED));
+        name.horizontalSizing(Sizing.expand(100));
+        row.child(name);
+
+        // Click anywhere on the row (not just the pill) to select for drag.
+        // The pill button consumes its own clicks first, so we only fire when
+        // the user clicked elsewhere on the row.
+        row.mouseDown().subscribe((click, doubled) -> {
+            selected = el;
+            rebuildTabContent();   // refresh the bottom info card
+            return true;
+        });
+
+        return row;
+    }
+
+    // ─── Built-in Mods tab ───────────────────────────────────────────────
+    private void populateModsTab() {
+        for (String[] mod : MODS) {
+            switch (mod[3]) {
+                case "HEADER" -> tabContent.child(buildModHeader(mod[1]));
+                case "WARN"   -> tabContent.child(buildModWarn(mod[1]));
+                case "slider" -> tabContent.child(buildSliderRow(mod[0], mod[1], mod[2]));
+                default       -> tabContent.child(buildToggleRowField(mod[0], mod[1], mod[2]));
+            }
+        }
+    }
+
+    private FlowLayout buildModHeader(String text) {
+        FlowLayout hdr = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.fixed(20));
+        hdr.padding(Insets.vertical(4));
+        hdr.horizontalAlignment(HorizontalAlignment.CENTER);
+        hdr.verticalAlignment(VerticalAlignment.CENTER);
+        hdr.surface(SECTION_HEADER_SURFACE);
+        hdr.child(UIComponents.label(Text.literal(text))
+                .color(Color.ofArgb(SkyzColors.TEXT_PRIMARY)));
+        return hdr;
+    }
+
+    private FlowLayout buildModWarn(String text) {
+        FlowLayout warn = UIContainers.verticalFlow(Sizing.fill(100), Sizing.content());
+        warn.padding(Insets.of(4, 4, 4, 4));
+        warn.horizontalAlignment(HorizontalAlignment.CENTER);
+        warn.gap(2);
+        warn.surface(WARN_SURFACE);
+        warn.child(UIComponents.label(Text.literal("⚠ " + text + " ⚠"))
+                .color(Color.ofArgb(0xFFFF4444)));
+        warn.child(UIComponents.label(Text.literal("May violate server rules. You are responsible."))
+                .color(Color.ofArgb(0x88FF8888)));
+        return warn;
+    }
+
+    private FlowLayout buildToggleRowField(String name, String desc, String field) {
+        return buildToggleRowDirect(name, desc, getToggle(field),
+                v -> {
+                    setToggle(field, v);
+                    if (parent != null) parent.toast(name + ": " + (v ? "ON" : "OFF"));
+                    SkyzConfig.save();
+                });
+    }
+
+    private FlowLayout buildToggleRowDirect(String name, String desc,
+                                             boolean initial,
+                                             java.util.function.Consumer<Boolean> onChange) {
+        FlowLayout row = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.fixed(34));
+        row.padding(Insets.of(3, 3, 6, 6));
+        row.gap(6);
+        row.verticalAlignment(VerticalAlignment.CENTER);
+
+        FlowLayout text = UIContainers.verticalFlow(Sizing.expand(100), Sizing.content());
+        text.gap(1);
+        text.child(UIComponents.label(Text.literal(name))
+                .color(Color.ofArgb(initial ? SkyzColors.TEXT_PRIMARY : SkyzColors.TEXT_MUTED)));
+        text.child(UIComponents.label(Text.literal(desc))
+                .color(Color.ofArgb(0x778CD2FF)));
+        row.child(text);
+
+        ButtonComponent pill = makePill(initial, onChange);
+        row.child(pill);
+
+        return row;
+    }
+
+    private FlowLayout buildSliderRow(String name, String desc, String field) {
+        FlowLayout row = UIContainers.verticalFlow(Sizing.fill(100), Sizing.fixed(48));
+        row.padding(Insets.of(3, 3, 6, 6));
+        row.gap(2);
+
+        FlowLayout topLine = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        topLine.verticalAlignment(VerticalAlignment.CENTER);
+        topLine.child(UIComponents.label(Text.literal(name))
+                .color(Color.ofArgb(SkyzColors.TEXT_PRIMARY))
+                .horizontalSizing(Sizing.expand(100)));
+        LabelComponent valueLbl = UIComponents.label(Text.literal(formatSlider(field)))
+                .color(Color.ofArgb(0xFF8CD2FF));
+        topLine.child(valueLbl);
+        row.child(topLine);
+
+        row.child(UIComponents.label(Text.literal(desc))
+                .color(Color.ofArgb(0x778CD2FF)));
+
+        // Skyz-styled slider — same pill/track/knob look as the settings
+        // sliders. SkyzSliderComponent extends owo's SliderComponent so
+        // value()/onChanged() behave identically; only the rendering
+        // differs from vanilla's button-textured slider.
+        SkyzSliderComponent slider = new SkyzSliderComponent(Sizing.fill(100));
+        slider.verticalSizing(Sizing.fixed(12));
+        slider.value(getSliderFrac(field));
+        slider.message(v -> Text.literal(""));   // we render value in the top-line label instead
+        slider.onChanged().subscribe(value -> {
+            setSliderFrac(field, (float) value);
+            valueLbl.text(Text.literal(formatSlider(field)));
+        });
+        row.child(slider);
+
+        return row;
+    }
+
+    /**
+     * Builds a Skyz pill toggle. Visually: blue glass when on, subtle outline
+     * when off. The button rebuilds its own label/renderer in its onPress so
+     * we don't need to refresh the parent row.
+     */
+    private ButtonComponent makePill(boolean initial, java.util.function.Consumer<Boolean> onChange) {
+        boolean[] state = {initial};
+        ButtonComponent btn = UIComponents.button(
+                Text.literal(state[0] ? "ON" : "OFF"),
+                b -> {});
+        btn.renderer(state[0] ? SkyzButtonRenderer.DEFAULT : SkyzButtonRenderer.NAV_BACK);
+        btn.horizontalSizing(Sizing.fixed(36));
+        btn.verticalSizing(Sizing.fixed(16));
+        btn.onPress(b -> {
+            state[0] = !state[0];
+            btn.setMessage(Text.literal(state[0] ? "ON" : "OFF"));
+            btn.renderer(state[0] ? SkyzButtonRenderer.DEFAULT : SkyzButtonRenderer.NAV_BACK);
+            onChange.accept(state[0]);
+        });
+        return btn;
+    }
+
+    // ─── Chrome actions ──────────────────────────────────────────────────
+    private void cycleGrid() {
+        gridIdx = (gridIdx + 1) % GRIDS.length;
+        updateChromeLabels();
+    }
+
+    private void toggleSnap() {
+        snapEnabled = !snapEnabled;
+        updateChromeLabels();
+    }
+
+    private void doSave() {
+        SkyzConfig.save();
+        if (parent != null) parent.toast("Saved!");
+    }
+
+    private void doReset() {
+        SkyzHudState.initialized = false;
+        SkyzHudState.ELEMENTS.clear();
+        SkyzHudState.initDefaults(width, height);
+        elements = SkyzHudState.ELEMENTS;
+        selected = null;
+        dragging = null;
+        rebuildTabContent();
+        if (parent != null) parent.toast("Layout reset");
+    }
+
+    private void updateChromeLabels() {
+        if (snapLabel != null) {
+            snapLabel.text(Text.literal("Snap: " + (snapEnabled ? GRIDS[gridIdx] + "px" : "OFF")));
+            snapLabel.color(Color.ofArgb(snapEnabled ? 0xFF8CD2FF : SkyzColors.TEXT_MUTED));
+        }
+        if (gridBtn != null) gridBtn.setMessage(Text.literal("Grid: " + GRIDS[gridIdx] + "px"));
+        if (snapToggleBtn != null) snapToggleBtn.setMessage(Text.literal(snapEnabled ? "Snap ON" : "Snap OFF"));
+    }
+
+    private int snapGrid() { return GRIDS[gridIdx]; }
+
+    private static String catLabel(String cat) {
+        return switch (cat) {
+            case "bars"    -> "BARS";
+            case "effects" -> "EFFECTS";
+            case "input"   -> "INPUT";
+            case "combat"  -> "COMBAT";
+            default        -> "INFO";
+        };
+    }
+
+    // ─── Render (preview + super) ────────────────────────────────────────
+    @Override public boolean shouldPause() { return false; }
+
+    @Override
+    public void renderBackground(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        // No-op — render() handles the simulated game background ourselves.
+    }
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        // Simulated game background (sky + ground)
-        ctx.fill(0, 0, width, height, 0xFF1A2A3A);
-        SkyzRenderHelper.fillGradientV(ctx, 0, 0, previewW(), (int)(height*.55f), 0xFF4A7FC0, 0xFF6AA0D8);
-        SkyzRenderHelper.fillGradientV(ctx, 0, (int)(height*.55f), previewW(), height, 0xFF5A7A45, 0xFF3D5A2A);
-        ctx.drawCenteredTextWithShadow(textRenderer, "Drag elements \u2022 Enable in sidebar \u2022 Toggle sidebar with [\u25C4]",
-                previewW()/2, height/2-4, 0x22FFFFFF);
+        // 1) Compute live preview width — shrinks/grows when the sidebar
+        //    collapses. Used for both rendering bounds and scissor clip.
+        int previewW = (sidebarOpen ? width - SIDEBAR_FULL_W - 8 : width - SIDEBAR_STRIP - 8);
+        previewW = Math.max(0, previewW);
 
-        // Snap grid overlay while dragging
+        // 2) Solid base — fills the *entire* screen so the sidebar's panel
+        //    sits on a uniform colour rather than a gradient that would
+        //    show seams under the sidebar's near-opaque surface.
+        ctx.fill(0, 0, width, height, 0xFF050F2A);
+
+        // 3) Game preview (gradient sky/ground + element previews) is
+        //    scissor-clipped to the preview area so HUD elements at
+        //    default positions on the right side don't bleed through the
+        //    sidebar. Without this, a Compass element at top-right would
+        //    show through the tab strip.
+        ctx.enableScissor(0, 0, previewW, height);
+
+        SkyzRenderHelper.fillGradientV(ctx, 0, 0,
+                previewW, (int) (height * .55f), 0xFF4A7FC0, 0xFF6AA0D8);
+        SkyzRenderHelper.fillGradientV(ctx, 0, (int) (height * .55f),
+                previewW, height, 0xFF5A7A45, 0xFF3D5A2A);
+        ctx.drawCenteredTextWithShadow(textRenderer,
+                "Drag elements • Enable in sidebar • Toggle sidebar with [◄]",
+                previewW / 2, height / 2 - 4, 0x22FFFFFF);
+
         if (dragging != null && snapEnabled) {
             int g = snapGrid();
-            for (int gx=0; gx<previewW(); gx+=g) ctx.fill(gx,0,gx+1,height,0x07FFFFFF);
-            for (int gy=0; gy<height; gy+=g)       ctx.fill(0,gy,previewW(),gy+1,0x07FFFFFF);
+            for (int gx = 0; gx < previewW; gx += g) ctx.fill(gx, 0, gx + 1, height, 0x07FFFFFF);
+            for (int gy = 0; gy < height;  gy += g) ctx.fill(0, gy, previewW, gy + 1, 0x07FFFFFF);
         }
 
-        // Update dragged position
         if (dragging != null) {
             int g = snapEnabled ? snapGrid() : 1;
-            int nx = Math.max(0, Math.min(previewW()-dragging.w, mouseX-dragOffX));
-            int ny = Math.max(0, Math.min(height-dragging.h,     mouseY-dragOffY));
-            dragging.x = Math.round((float)nx/g)*g;
-            dragging.y = Math.round((float)ny/g)*g;
+            int nx = Math.max(0, Math.min(previewW - dragging.w, mouseX - dragOffX));
+            int ny = Math.max(0, Math.min(height   - dragging.h, mouseY - dragOffY));
+            dragging.x = Math.round((float) nx / g) * g;
+            dragging.y = Math.round((float) ny / g) * g;
         }
 
-        // HUD element previews (all, not just enabled, so you can grab disabled ones)
         for (var el : elements) drawElPreview(ctx, el, mouseX, mouseY);
 
-        // Sidebar toggle button (always visible)
-        int bx = sidebarX() - 2;
-        ctx.fill(bx, height/2-14, bx+20, height/2+14, 0xCC071830);
-        ctx.fill(bx, height/2-14, bx+1, height/2+14, 0x558CD2FF);
-        ctx.drawCenteredTextWithShadow(textRenderer, sidebarOpen ? "\u25BA" : "\u25C4",
-                bx+10, height/2-4, 0xFF8CD2FF);
+        ctx.disableScissor();
 
-        if (sidebarOpen) drawSidebar(ctx, mouseX, mouseY);
-
-        // Bottom bar (always visible)
-        ctx.fill(0, height-26, width, height, 0xCC071830);
-        ctx.fill(0, height-26, width, height-25, 0x338CD2FF);
-        // Snap info
-        ctx.drawTextWithShadow(textRenderer,
-                "Snap: "+(snapEnabled ? snapGrid()+"px" : "OFF"),
-                6, height-17, snapEnabled ? 0xFF8CD2FF : SkyzColors.TEXT_MUTED);
-        // Cycle grid button
-        int cgx = 80;
-        ctx.fill(cgx, height-24, cgx+60, height-3, 0x441864A0);
-        ctx.drawCenteredTextWithShadow(textRenderer, "Grid: "+snapGrid()+"px", cgx+30, height-17, SkyzColors.TEXT_PRIMARY);
-        // Snap toggle
-        ctx.fill(cgx+66, height-24, cgx+116, height-3, snapEnabled?0x441864A0:0x33143254);
-        ctx.drawCenteredTextWithShadow(textRenderer, snapEnabled?"Snap ON":"Snap OFF", cgx+91, height-17,
-                snapEnabled?SkyzColors.TEXT_PRIMARY:SkyzColors.TEXT_MUTED);
-        // Save button
-        ctx.fill(width-130, height-24, width-74, height-3, 0x441864A0);
-        ctx.drawCenteredTextWithShadow(textRenderer, "Save \u2713", width-102, height-17, 0xFF4CFA87);
-        // Reset button
-        ctx.fill(width-70, height-24, width-4, height-3, 0x44440000);
-        ctx.drawCenteredTextWithShadow(textRenderer, "Reset", width-37, height-17, 0xFFFA6C4C);
-
+        // 4) Owo (sidebar + chrome) on top.
         super.render(ctx, mouseX, mouseY, delta);
+
+        // 5) Toast (re-uses parent screen's toast manager).
+        if (parent != null) parent.toast.render(ctx, width, delta);
     }
 
     private void drawElPreview(DrawContext ctx, SkyzHudState.HudElementState el, int mx, int my) {
-        boolean hov = mx>=el.x&&mx<=el.x+el.w&&my>=el.y&&my<=el.y+el.h;
-        boolean sel = el==selected, drag = el==dragging;
-        // Disabled elements are INVISIBLE unless hovered, selected, or dragging
+        boolean hov  = mx >= el.x && mx <= el.x + el.w && my >= el.y && my <= el.y + el.h;
+        boolean sel  = el == selected;
+        boolean drag = el == dragging;
         if (!el.enabled && !hov && !sel && !drag) return;
-        int bg  = drag?0xCC1A5A8A:sel?0x993C8ABE:!el.enabled?0x44143C6E:0x88000000;
-        int brd = drag||sel?0xFF8CD2FF:!el.enabled?0x44446688:0x448CD2FF;
-        ctx.fill(el.x,el.y,el.x+el.w,el.y+el.h,bg);
-        ctx.fill(el.x,el.y,el.x+el.w,el.y+1,brd);
-        ctx.fill(el.x,el.y+el.h-1,el.x+el.w,el.y+el.h,brd);
-        ctx.fill(el.x,el.y,el.x+1,el.y+el.h,brd);
-        ctx.fill(el.x+el.w-1,el.y,el.x+el.w,el.y+el.h,brd);
-        ctx.drawTextWithShadow(textRenderer, el.icon, el.x+3, el.y+(el.h-8)/2, el.enabled?0xFFFFFFFF:0x88FFFFFF);
-        String lbl=el.name;
-        while (textRenderer.getWidth(lbl)>el.w-18&&lbl.length()>3) lbl=lbl.substring(0,lbl.length()-3)+"..";
-        ctx.drawTextWithShadow(textRenderer, lbl, el.x+16, el.y+(el.h-8)/2, el.enabled?0xCCDDFFFF:0x55DDFFFF);
+        int bg  = drag ? 0xCC1A5A8A : sel ? 0x993C8ABE : !el.enabled ? 0x44143C6E : 0xB8050F30;
+        int brd = drag || sel ? 0xFF8CD2FF : !el.enabled ? 0x44446688 : 0x668CD2FF;
+        SkyzRenderHelper.drawHudPanel(ctx, el.x, el.y, el.x + el.w, el.y + el.h, bg, brd);
+        ctx.drawTextWithShadow(textRenderer, el.icon, el.x + 3, el.y + (el.h - 8) / 2,
+                el.enabled ? 0xFFFFFFFF : 0x88FFFFFF);
+        String lbl = el.name;
+        while (textRenderer.getWidth(lbl) > el.w - 18 && lbl.length() > 3)
+            lbl = lbl.substring(0, lbl.length() - 3) + "..";
+        ctx.drawTextWithShadow(textRenderer, lbl, el.x + 16, el.y + (el.h - 8) / 2,
+                el.enabled ? 0xCCDDFFFF : 0x55DDFFFF);
     }
 
-    // \u2500\u2500 Sidebar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-    private void drawSidebar(DrawContext ctx, int mx, int my) {
-        int sx = sidebarX();
-        int bgCol = 0xDD000000 | (SkyzTheme.BG1 & 0x00FFFFFF);
-        ctx.fill(sx, 0, sx+SIDEBAR_W+PAD, height-26, bgCol);
-        ctx.fill(sx, 0, sx+1, height-26, 0x558CD2FF);
-
-        // Tabs
-        int tw = (SIDEBAR_W-2)/2;
-        for (int i=0;i<TABS.length;i++){
-            int tx=sx+2+i*(tw+1);
-            boolean active=i==activeTab;
-            ctx.fill(tx,2,tx+tw,20,active?SkyzTheme.BTN_BG:0x33091E46);
-            ctx.fill(tx,active?20:19,tx+tw,20,active?0xFF8CD2FF:0x338CD2FF);
-            ctx.drawCenteredTextWithShadow(textRenderer,TABS[i],tx+tw/2,8,
-                    active?0xFFFFFFFF:SkyzColors.TEXT_MUTED);
-        }
-        ctx.fill(sx+1,20,sx+SIDEBAR_W+PAD-1,21,0x558CD2FF);
-
-        if (activeTab==0) drawHudTab(ctx,sx,mx,my);
-        else              drawModsTab(ctx,sx,mx,my);
-    }
-
-    private void drawHudTab(DrawContext ctx, int sx, int mx, int my) {
-        int listTop=22, listBot=height-30;
-        int listH=listBot-listTop;
-        // Count total rows including category headers
-        int totalRows = 0;
-        String lastCat = "";
-        for (var el : elements) {
-            if (!el.category.equals(lastCat)) { lastCat=el.category; totalRows+=14; }
-            totalRows+=EL_ROW;
-        }
-        totalRows += 24+60; // snap + vanilla section
-
-        hudScroll = Math.max(0, Math.min(Math.max(0,totalRows-listH), hudScroll));
-        ctx.enableScissor(sx, listTop, sx+SIDEBAR_W+PAD, listBot);
-
-        int ey=listTop-hudScroll;
-        lastCat="";
-        for (var el : elements) {
-            if (!el.category.equals(lastCat)) {
-                lastCat=el.category;
-                String hdr=switch(lastCat){case "bars"->"BARS";case "effects"->"EFFECTS";case "input"->"INPUT";case "combat"->"COMBAT";default->"INFO";};
-                if (ey>=listTop-14&&ey<listBot){
-                    ctx.fill(sx+2,ey+1,sx+SIDEBAR_W+PAD-2,ey+13,0x11FFFFFF);
-                    ctx.drawTextWithShadow(textRenderer,hdr,sx+6,ey+3,SkyzTheme.ACCENT_DIM);
-                }
-                ey+=14;
-            }
-            if (ey>=listTop-EL_ROW&&ey<listBot) {
-                boolean hov=mx>=sx+2&&mx<=sx+SIDEBAR_W+PAD-2&&my>=ey&&my<=ey+EL_ROW;
-                if (hov) ctx.fill(sx+2,ey,sx+SIDEBAR_W+PAD-2,ey+EL_ROW,0x22143C6E);
-                drawPill(ctx,sx+6,ey+4,el.enabled);
-                ctx.drawTextWithShadow(textRenderer,el.icon,sx+40,ey+7,0xFFFFFFFF);
-                ctx.drawTextWithShadow(textRenderer,el.name,sx+54,ey+7,
-                        el.enabled?SkyzColors.TEXT_PRIMARY:SkyzColors.TEXT_MUTED);
-            }
-            ey+=EL_ROW;
-        }
-
-        // Snap toggle
-        ey+=6;
-        if (ey>=listTop-22&&ey<listBot) {
-            ctx.fill(sx+1,ey,sx+SIDEBAR_W+PAD-1,ey+1,0x228CD2FF); ey+=6;
-            ctx.drawTextWithShadow(textRenderer,"Snap to grid",sx+6,ey+5,SkyzColors.TEXT_MUTED);
-            drawPill(ctx,sx+SIDEBAR_W-26,ey+2,snapEnabled); ey+=22;
-        }
-
-        // Vanilla suppress
-        if (ey>=listTop-80&&ey<listBot) {
-            ctx.fill(sx+1,ey,sx+SIDEBAR_W+PAD-1,ey+1,0x228CD2FF); ey+=6;
-            ctx.drawTextWithShadow(textRenderer,"Replace vanilla:",sx+6,ey,0x558CD2FF); ey+=12;
-            drawVTog(ctx,sx,ey,"Health", SkyzHudState.hideVanillaHealth); ey+=18;
-            drawVTog(ctx,sx,ey,"Hunger", SkyzHudState.hideVanillaHunger); ey+=18;
-            drawVTog(ctx,sx,ey,"Armor",  SkyzHudState.hideVanillaArmor);
-        }
-
-        ctx.disableScissor();
-
-        // Scrollbar
-        if (totalRows>listH) {
-            int th=Math.max(14,listH*listH/totalRows);
-            int ty=listTop+hudScroll*(listH-th)/Math.max(1,totalRows-listH);
-            ctx.fill(sx+SIDEBAR_W+PAD-4,listTop,sx+SIDEBAR_W+PAD-1,listBot,0x1A8CD2FF);
-            ctx.fill(sx+SIDEBAR_W+PAD-4,ty,sx+SIDEBAR_W+PAD-1,ty+th,0x558CD2FF);
-        }
-
-        // Selected info
-        if (selected!=null) {
-            int iy=listBot+2;
-            ctx.fill(sx+2,iy,sx+SIDEBAR_W+PAD-2,iy+22,0x88071830);
-            ctx.drawTextWithShadow(textRenderer,selected.name,sx+6,iy+3,0xCC8CD2FF);
-            ctx.drawTextWithShadow(textRenderer,"X:"+selected.x+" Y:"+selected.y,sx+6,iy+13,SkyzColors.TEXT_MUTED);
-        }
-    }
-
-    private void drawModsTab(DrawContext ctx, int sx, int mx, int my) {
-        int clipTop=22, clipBot=height-30;
-        int visH=clipBot-clipTop, totalH=MODS.length*MOD_ROW;
-        modsScroll=Math.max(0,Math.min(Math.max(0,totalH-visH),modsScroll));
-        ctx.enableScissor(sx,clipTop,sx+SIDEBAR_W+PAD,clipBot);
-        int ey=clipTop-modsScroll;
-        for (String[] mod : MODS) {
-            if (ey+MOD_ROW<clipTop){ey+=MOD_ROW;continue;}
-            if (ey>clipBot) break;
-            boolean on=getToggle(mod[2]);
-            boolean hov=mx>=sx+2&&mx<=sx+SIDEBAR_W+PAD-2&&my>=ey&&my<=ey+MOD_ROW-2;
-            ctx.fill(sx+2,ey,sx+SIDEBAR_W+PAD-2,ey+MOD_ROW-2,hov?0x33143C6E:0x11091E46);
-            ctx.drawTextWithShadow(textRenderer,mod[0],sx+8,ey+4,on?SkyzColors.TEXT_PRIMARY:SkyzColors.TEXT_MUTED);
-            ctx.drawTextWithShadow(textRenderer,mod[1],sx+8,ey+15,0x448CD2FF);
-            if (mod[3].equals("toggle")) {
-                drawPill(ctx,sx+SIDEBAR_W+PAD-38,ey+12,on);
-            } else {
-                float val=SkyzClientState.fovMultiplier;
-                int sX=sx+8,sW=SIDEBAR_W-50;
-                ctx.fill(sX,ey+29,sX+sW,ey+32,0x338CD2FF);
-                ctx.fill(sX,ey+29,sX+(int)((val-0.5f)/1.5f*sW),ey+32,0x998CD2FF);
-                // Knob
-                int kx=sX+(int)((val-0.5f)/1.5f*sW)-3;
-                ctx.fill(kx,ey+26,kx+6,ey+35,0xFF8CD2FF);
-                ctx.drawTextWithShadow(textRenderer,String.format("%.1fx",val),
-                        sx+SIDEBAR_W-24,ey+26,SkyzColors.TEXT_MUTED);
-            }
-            ey+=MOD_ROW;
-        }
-        ctx.disableScissor();
-        if (totalH>visH){
-            int th=Math.max(14,visH*visH/totalH);
-            int ty=clipTop+modsScroll*(visH-th)/Math.max(1,totalH-visH);
-            ctx.fill(sx+SIDEBAR_W+PAD-4,clipTop,sx+SIDEBAR_W+PAD-1,clipBot,0x1A8CD2FF);
-            ctx.fill(sx+SIDEBAR_W+PAD-4,ty,sx+SIDEBAR_W+PAD-1,ty+th,0x558CD2FF);
-        }
-    }
-
-    private void drawPill(DrawContext ctx, int x, int y, boolean on) {
-        ctx.fill(x,y,x+30,y+14,on?0x551864A0:0x33143254);
-        ctx.fill(x,y,x+30,y+1,on?0x5564BEFF:0x2A8CD2FF);
-        ctx.fill(on?x+18:x+2,y+3,(on?x+26:x+10),y+11,on?0xCC64C8FF:0x7890AACC);
-    }
-
-    private void drawVTog(DrawContext ctx, int sx, int y, String lbl, boolean on) {
-        drawPill(ctx,sx+6,y,on);
-        ctx.drawTextWithShadow(textRenderer,"Hide vanilla "+lbl,sx+38,y+3,
-                on?SkyzColors.TEXT_PRIMARY:SkyzColors.TEXT_MUTED);
-    }
-
-    // \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-    private boolean getToggle(String f){return switch(f){
-        case "toggleSprint"->SkyzClientState.toggleSprint;case "toggleSneak"->SkyzClientState.toggleSneak;
-        case "fullbright"->SkyzClientState.fullbright;case "noFog"->SkyzClientState.noFog;
-        case "noPumpkinBlur"->SkyzClientState.noPumpkinBlur;case "antiAfk"->SkyzClientState.antiAfk;
-        case "autoGG"->SkyzClientState.autoGG;case "noFireOverlay"->SkyzClientState.noFireOverlay;
-        case "coloredHitboxes"->SkyzClientState.coloredHitboxes;case "toggleChat"->SkyzClientState.toggleChat;
-        default->false;};}
-
-    private void setToggle(String f,boolean v){switch(f){
-        case "toggleSprint"->SkyzClientState.toggleSprint=v;case "toggleSneak"->SkyzClientState.toggleSneak=v;
-        case "fullbright"->SkyzClientState.fullbright=v;case "noFog"->SkyzClientState.noFog=v;
-        case "noPumpkinBlur"->SkyzClientState.noPumpkinBlur=v;case "antiAfk"->SkyzClientState.antiAfk=v;
-        case "autoGG"->SkyzClientState.autoGG=v;case "noFireOverlay"->SkyzClientState.noFireOverlay=v;
-        case "coloredHitboxes"->SkyzClientState.coloredHitboxes=v;case "toggleChat"->SkyzClientState.toggleChat=v;}}
-
-    // \u2500\u2500 Input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
+    // ─── Input ───────────────────────────────────────────────────────────
     @Override
     public boolean mouseClicked(Click click, boolean doubled) {
-        if (super.mouseClicked(click, doubled)) return true;
-        double mx=click.x(), my=click.y();
-        int sx=sidebarX();
+        double mx = click.x(), my = click.y();
+        int previewW = (sidebarOpen ? width - SIDEBAR_FULL_W - 8 : width - SIDEBAR_STRIP - 8);
 
-        // Sidebar toggle
-        int bx=sx-2;
-        if (mx>=bx&&mx<=bx+20&&my>=height/2-14&&my<=height/2+14) {
-            sidebarOpen=!sidebarOpen; return true;
-        }
-
-        // Bottom bar buttons
-        if (my>=height-24&&my<=height-3) {
-            int cgx=80;
-            if (mx>=cgx&&mx<=cgx+60) { gridIdx=(gridIdx+1)%GRIDS.length; return true; }
-            if (mx>=cgx+66&&mx<=cgx+116) { snapEnabled=!snapEnabled; return true; }
-            if (mx>=width-130&&mx<=width-74) {
-                SkyzConfig.save(); parent.toast("Saved!"); return true;
-            }
-            if (mx>=width-70&&mx<=width-4) {
-                resetLayout(); return true;
-            }
-        }
-
-        // Sidebar interactions
-        if (sidebarOpen && mx>=sx) {
-            // Tab switch
-            int tw=(SIDEBAR_W-2)/2;
-            for (int i=0;i<TABS.length;i++){
-                int tx=sx+2+i*(tw+1);
-                if (mx>=tx&&mx<=tx+tw&&my>=2&&my<=20){ activeTab=i; return true; }
-            }
-            if (activeTab==0) return clickHudTab(mx,my,sx);
-            else              return clickModsTab(mx,my,sx);
-        }
-
-        // Preview area: select / start drag
-        // Topmost (last in list) takes priority
-        for (int i=elements.size()-1;i>=0;i--) {
-            var el=elements.get(i);
-            if (mx>=el.x&&mx<=el.x+el.w&&my>=el.y&&my<=el.y+el.h) {
-                selected=el; dragging=el;
-                dragOffX=(int)mx-el.x; dragOffY=(int)my-el.y;
-                return true;
-            }
-        }
-        selected=null;
-        return false;
-    }
-
-    private boolean clickHudTab(double mx, double my, int sx) {
-        int listTop=22, ey=listTop-hudScroll;
-        String lastCat="";
-        for (var el : elements) {
-            if (!el.category.equals(lastCat)){ lastCat=el.category; ey+=14; }
-            // Toggle pill
-            if (mx>=sx+6&&mx<=sx+36&&my>=ey+4&&my<=ey+18){ el.enabled=!el.enabled; return true; }
-            // Row click = select
-            if (mx>=sx+2&&mx<=sx+SIDEBAR_W+PAD-2&&my>=ey&&my<=ey+EL_ROW){ selected=el; return true; }
-            ey+=EL_ROW;
-        }
-        // Snap pill
-        ey+=10;
-        if (mx>=sx+SIDEBAR_W-26&&mx<=sx+SIDEBAR_W+4&&my>=ey+2&&my<=ey+16){ snapEnabled=!snapEnabled; return true; }
-        // Vanilla
-        ey+=28;
-        if (mx>=sx+6&&mx<=sx+36){
-            if (my>=ey&&my<=ey+14)    {SkyzHudState.hideVanillaHealth=!SkyzHudState.hideVanillaHealth;return true;}
-            if (my>=ey+18&&my<=ey+32) {SkyzHudState.hideVanillaHunger=!SkyzHudState.hideVanillaHunger;return true;}
-            if (my>=ey+36&&my<=ey+50) {SkyzHudState.hideVanillaArmor=!SkyzHudState.hideVanillaArmor;return true;}
-        }
-        return false;
-    }
-
-    private boolean clickModsTab(double mx, double my, int sx) {
-        int clipTop=22, ey=clipTop-modsScroll;
-        for (String[] mod : MODS) {
-            if (ey+MOD_ROW<clipTop){ey+=MOD_ROW;continue;}
-            if (mod[3].equals("toggle")){
-                int tx=sx+SIDEBAR_W+PAD-38;
-                if (mx>=tx&&mx<=tx+30&&my>=ey+12&&my<=ey+26){
-                    setToggle(mod[2],!getToggle(mod[2]));
-                    parent.toast(mod[0]+": "+(getToggle(mod[2])?"ON":"OFF")); return true;
-                }
-            } else {
-                int sX=sx+8,sW=SIDEBAR_W-50;
-                if (mx>=sX&&mx<=sX+sW&&my>=ey+26&&my<=ey+35){
-                    SkyzClientState.fovMultiplier=Math.max(0.5f,Math.min(2f,0.5f+(float)((mx-sX)/sW)*1.5f));
+        // Drag detection runs FIRST when the click is in the preview area.
+        // We don't gate on super.mouseClicked() here because owo's root
+        // flow-layout's empty mid-spacer can swallow the click as
+        // "consumed" via its focus-handler side-effect, which would stop
+        // drag from ever starting. The preview area has no real owo
+        // content anyway, so it's safe to claim clicks there for ourselves.
+        boolean inPreview = mx >= 0 && mx <= previewW
+                && my >= 0 && my < height;
+        if (inPreview) {
+            // Topmost element wins (iterate in reverse).
+            for (int i = elements.size() - 1; i >= 0; i--) {
+                var el = elements.get(i);
+                if (mx >= el.x && mx <= el.x + el.w && my >= el.y && my <= el.y + el.h) {
+                    selected = el;
+                    dragging = el;
+                    dragOffX = (int) mx - el.x;
+                    dragOffY = (int) my - el.y;
+                    if (activeTab == 0) rebuildTabContent();
                     return true;
                 }
             }
-            ey+=MOD_ROW;
+            // Click in empty preview area — deselect.
+            if (selected != null && activeTab == 0) {
+                selected = null;
+                rebuildTabContent();
+            } else {
+                selected = null;
+            }
         }
-        return false;
-    }
 
-    private void resetLayout(){
-        SkyzHudState.initialized=false; SkyzHudState.ELEMENTS.clear();
-        SkyzHudState.initDefaults(width,height);
-        elements=SkyzHudState.ELEMENTS; selected=null; dragging=null; hudScroll=0;
-        parent.toast("Layout reset");
+        // Defer to owo for sidebar / chrome / anything else.
+        return super.mouseClicked(click, doubled);
     }
 
     @Override
     public boolean mouseDragged(Click click, double dx, double dy) {
-        if (activeTab==1&&sidebarOpen) {
-            double mx=click.x(), my=click.y(); int sx=sidebarX();
-            if (mx>=sx){ int ey=22-modsScroll;
-                for (String[] mod:MODS){if(ey+MOD_ROW<22){ey+=MOD_ROW;continue;}
-                    if(mod[3].equals("slider")&&my>=ey+26&&my<=ey+35){
-                        int sX=sx+8,sW=SIDEBAR_W-50;
-                        SkyzClientState.fovMultiplier=Math.max(0.5f,Math.min(2f,0.5f+(float)((mx-sX)/sW)*1.5f));
-                        return true;}ey+=MOD_ROW;}}}
-        return super.mouseDragged(click,dx,dy);
+        // While we're dragging a HUD element, the preview render() updates
+        // its position from the live mouse coords, so nothing to do here.
+        return super.mouseDragged(click, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(Click click){dragging=null;return super.mouseReleased(click);}
+    public boolean mouseReleased(Click click) {
+        dragging = null;
+        return super.mouseReleased(click);
+    }
+
+    @Override public boolean charTyped(CharInput in) { return false; }
 
     @Override
-    public boolean mouseScrolled(double mx,double my,double h,double v){
-        int sx=sidebarX();
-        if (sidebarOpen&&mx>=sx){
-            if (activeTab==0){
-                int totalRows=elements.size()*EL_ROW+24+60;
-                int listH=height-52;
-                hudScroll=(int)Math.max(0,Math.min(Math.max(0,totalRows-listH),hudScroll-v*20));
-            } else {
-                int totalH=MODS.length*MOD_ROW;
-                int visH=height-52;
-                modsScroll=(int)Math.max(0,Math.min(Math.max(0,totalH-visH),modsScroll-v*20));
-            }
-            return true;
+    public void close() {
+        if (client != null) client.setScreen(parent);
+    }
+
+    // ─── State get/set helpers (mirror old screen) ───────────────────────
+    private boolean getToggle(String f) { return switch (f) {
+        case "toggleSprint"    -> SkyzClientState.toggleSprint;
+        case "toggleSneak"     -> SkyzClientState.toggleSneak;
+        case "fullbright"      -> SkyzClientState.fullbright;
+        case "noFog"           -> SkyzClientState.noFog;
+        case "noPumpkinBlur"   -> SkyzClientState.noPumpkinBlur;
+        case "antiAfk"         -> SkyzClientState.antiAfk;
+        case "autoGG"          -> SkyzClientState.autoGG;
+        case "noFireOverlay"   -> SkyzClientState.noFireOverlay;
+        case "coloredHitboxes" -> SkyzClientState.coloredHitboxes;
+        case "toggleChat"      -> SkyzClientState.toggleChat;
+        case "chatTimestamps"  -> SkyzClientState.chatTimestamps;
+        case "dynamicFps"      -> SkyzClientState.dynamicFps;
+        case "particleLimiter" -> SkyzClientState.particleLimiter;
+        case "storageEsp"      -> SkyzClientState.storageEsp;
+        case "playerEsp"       -> SkyzClientState.playerEsp;
+        case "itemEsp"         -> SkyzClientState.itemEsp;
+        case "blockEsp"        -> SkyzClientState.blockEsp;
+        case "mobEsp"          -> SkyzClientState.mobEsp;
+        case "oreHighlighter"  -> SkyzClientState.oreHighlighter;
+        case "autoTotem"       -> SkyzClientState.autoTotem;
+        case "trajectories"    -> SkyzClientState.trajectories;
+        default -> false;
+    }; }
+
+    private void setToggle(String f, boolean v) { switch (f) {
+        case "toggleSprint"    -> SkyzClientState.toggleSprint    = v;
+        case "toggleSneak"     -> SkyzClientState.toggleSneak     = v;
+        case "fullbright"      -> SkyzClientState.fullbright      = v;
+        case "noFog"           -> SkyzClientState.noFog           = v;
+        case "noPumpkinBlur"   -> SkyzClientState.noPumpkinBlur   = v;
+        case "antiAfk"         -> SkyzClientState.antiAfk         = v;
+        case "autoGG"          -> SkyzClientState.autoGG          = v;
+        case "noFireOverlay"   -> SkyzClientState.noFireOverlay   = v;
+        case "coloredHitboxes" -> SkyzClientState.coloredHitboxes = v;
+        case "toggleChat"      -> SkyzClientState.toggleChat      = v;
+        case "chatTimestamps"  -> SkyzClientState.chatTimestamps  = v;
+        case "dynamicFps"      -> SkyzClientState.dynamicFps      = v;
+        case "particleLimiter" -> SkyzClientState.particleLimiter = v;
+        case "storageEsp"      -> SkyzClientState.storageEsp      = v;
+        case "playerEsp"       -> SkyzClientState.playerEsp       = v;
+        case "itemEsp"         -> SkyzClientState.itemEsp         = v;
+        case "blockEsp"        -> SkyzClientState.blockEsp        = v;
+        case "mobEsp"          -> SkyzClientState.mobEsp          = v;
+        case "oreHighlighter"  -> SkyzClientState.oreHighlighter  = v;
+        case "autoTotem"       -> SkyzClientState.autoTotem       = v;
+        case "trajectories"    -> SkyzClientState.trajectories    = v;
+    } }
+
+    /** Returns the slider 0..1 fraction for the given field. */
+    private double getSliderFrac(String f) { return switch (f) {
+        case "fovMultiplier"  -> (SkyzClientState.fovMultiplier - 0.5f) / 1.5f;
+        case "autoclickerCps" -> (SkyzClientState.autoclickerCps - 1) / 19.0;
+        default -> 0.5;
+    }; }
+
+    /** Writes back from a 0..1 fraction. */
+    private void setSliderFrac(String f, float frac) {
+        switch (f) {
+            case "fovMultiplier"  -> SkyzClientState.fovMultiplier  = 0.5f + frac * 1.5f;
+            case "autoclickerCps" -> SkyzClientState.autoclickerCps = Math.round(1 + frac * 19);
         }
-        return false;
     }
 
-    @Override public boolean charTyped(CharInput input){return false;}
-    @Override public boolean shouldPause(){return false;}
+    /** Human-readable current value for the slider's right-aligned label. */
+    private String formatSlider(String f) { return switch (f) {
+        case "fovMultiplier"  -> String.format("%.2f×", SkyzClientState.fovMultiplier);
+        case "autoclickerCps" -> SkyzClientState.autoclickerCps + " cps";
+        default -> "";
+    }; }
 }

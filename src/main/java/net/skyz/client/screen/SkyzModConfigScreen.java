@@ -200,8 +200,9 @@ public class SkyzModConfigScreen extends Screen {
         SkyzRenderHelper.fillPanel(ctx, tx, ty, 36, 14,
                 on ? 0x551E6EC8 : 0x33143254,
                 on ? 0x6464BEFF : 0x2A8CD2FF);
-        int thumbX = on ? tx+21 : tx+3;
-        SkyzRenderHelper.fillRect(ctx, thumbX, ty+3, 10, 8, on ? 0xCC64C8FF : 0x7890AACC);
+        int thumbX = on ? tx+25 : tx+8;
+        SkyzRenderHelper.fillCircle(ctx, thumbX, ty+7, 5, on ? 0xFF64C8FF : 0xCC90AACC);
+        SkyzRenderHelper.fillCircle(ctx, thumbX-1, ty+6, 2, 0x44FFFFFF);
     }
 
     private void drawSliderRow(DrawContext ctx, int x, int y, int w,

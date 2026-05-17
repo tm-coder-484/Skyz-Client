@@ -1,0 +1,49 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <templates>
+        <!--
+          The HTML .mc-btn analogue: glass body, top accent strip via border,
+          centred uppercase label. Owo's vanilla button surface gets us most
+          of the look natively; the rest is colour + sizing tokens.
+
+          Substitutions:
+            id    — required, used by Java handler to attach onPress
+            label — button text (will be auto-uppercased by owo styling)
+            icon  — single emoji/symbol prepended with a small gap
+        -->
+        <template name="mc-btn">
+            <button id="{{id|}}">
+                <text>{{icon|}} {{label}}</text>
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="fixed">22</vertical>
+                </sizing>
+                <horizontal-text-alignment>center</horizontal-text-alignment>
+                <vertical-text-alignment>center</vertical-text-alignment>
+                <color>0xFFEEF6FF</color>
+                <padding>
+                    <horizontal>10</horizontal>
+                    <vertical>3</vertical>
+                </padding>
+            </button>
+        </template>
+
+        <!-- Variant: red-tinted "quit" button (HTML .mc-btn.quit) -->
+        <template name="mc-btn-quit">
+            <button id="{{id|}}">
+                <text>{{label}}</text>
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="fixed">22</vertical>
+                </sizing>
+                <horizontal-text-alignment>center</horizontal-text-alignment>
+                <vertical-text-alignment>center</vertical-text-alignment>
+                <color>0xFFFFB4B4</color>
+                <padding>
+                    <horizontal>10</horizontal>
+                    <vertical>3</vertical>
+                </padding>
+            </button>
+        </template>
+    </templates>
+</owo-ui>

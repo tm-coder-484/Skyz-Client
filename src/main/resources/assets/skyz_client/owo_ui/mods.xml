@@ -1,0 +1,179 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Mods screen — owo-lib edition (Phase 2b port).
+
+      Structure:
+        Nav bar    : SKYZ / MODS  ─────────────────  [← BACK]
+        Toolbar    : [search] [ALL] [PERF] [VISUAL] [PVP] [UTIL] [LIB]   N mods
+        Mods list  : vertical flow populated programmatically; each entry is
+                     a card with icon, name+meta+description, category pill
+                     and a CONFIG button.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>MODS</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-modmenu">
+                            <text>📋  FULL MOD MENU</text>
+                            <sizing>
+                                <horizontal method="fixed">160</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                            <margins><right>6</right></margins>
+                        </button>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Toolbar (search + filters + count) ──────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>5</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <!-- Search uses expand so it shrinks to fit when 6 filter
+                             pills + count add up close to the available width. -->
+                        <flow-layout id="search-wrapper" direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                            <padding>
+                                <horizontal>8</horizontal>
+                                <vertical>2</vertical>
+                            </padding>
+                            <vertical-alignment>center</vertical-alignment>
+                            <children>
+                                <text-box id="tb-search">
+                                    <sizing><horizontal method="fill">100</horizontal></sizing>
+                                </text-box>
+                            </children>
+                        </flow-layout>
+                        <button id="btn-filter-all">
+                            <text>ALL</text>
+                            <sizing>
+                                <horizontal method="fixed">36</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-perf">
+                            <text>PERF</text>
+                            <sizing>
+                                <horizontal method="fixed">44</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-visual">
+                            <text>VISUAL</text>
+                            <sizing>
+                                <horizontal method="fixed">54</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-pvp">
+                            <text>PVP</text>
+                            <sizing>
+                                <horizontal method="fixed">36</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-util">
+                            <text>UTIL</text>
+                            <sizing>
+                                <horizontal method="fixed">40</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-lib">
+                            <text>LIB</text>
+                            <sizing>
+                                <horizontal method="fixed">36</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <label id="lbl-count">
+                            <text>0 mods</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Mods list (populated in build()) ────────────────── -->
+                <!--
+                  Mods list wrapped in a vertical <scroll> so the user can
+                  scroll through the full mod list when there are too many
+                  to fit on-screen. Same convention as the multiplayer /
+                  singleplayer / settings ports — scroll wrapper outside,
+                  content flow as the first child (the wrapped child must
+                  precede property elements; see SKYZ_PORT_NOTES.md gotcha #10).
+                -->
+                <scroll direction="vertical" id="scroll-mods-list">
+                    <flow-layout id="mods-list" direction="vertical">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                            <vertical method="content"/>
+                        </sizing>
+                        <gap>6</gap>
+                        <padding>
+                            <right>6</right>
+                        </padding>
+                    </flow-layout>
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="fill">100</vertical>
+                    </sizing>
+                    <scrollbar-thiccness>4</scrollbar-thiccness>
+                    <scroll-step>56</scroll-step>
+                </scroll>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

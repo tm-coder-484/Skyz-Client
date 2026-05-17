@@ -1,306 +1,373 @@
 package net.skyz.client.screen;
 
+import io.wispforest.owo.ui.base.BaseUIModelScreen;
+import io.wispforest.owo.ui.component.ButtonComponent;
+import io.wispforest.owo.ui.component.LabelComponent;
+import io.wispforest.owo.ui.component.TextBoxComponent;
+import io.wispforest.owo.ui.component.UIComponents;
+import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.ScrollContainer;
+import io.wispforest.owo.ui.container.UIContainers;
+import io.wispforest.owo.ui.core.Color;
+import io.wispforest.owo.ui.core.HorizontalAlignment;
+import io.wispforest.owo.ui.core.Insets;
+import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.world.EditWorldScreen;
 import net.minecraft.client.gui.screen.world.SelectWorldScreen;
-import net.minecraft.client.input.CharInput;
-import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.GameMode;
+import net.minecraft.world.level.storage.LevelStorage;
 import net.minecraft.world.level.storage.LevelSummary;
-import net.skyz.client.util.*;
+import net.skyz.client.SkyzClientMod;
+import net.skyz.client.util.SkyzColors;
+import net.skyz.client.util.SkyzRenderHelper;
 import net.skyz.client.util.SkyzTheme;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
 
 /**
- * Custom Singleplayer screen using MC's actual world list.
+ * Skyz Singleplayer screen — owo-lib edition (Phase 2c port).
  *
- * 1.21.11 API notes:
- *  - LevelSummary.getDisplayName() returns String directly
- *  - LevelSummary.getGameMode() returns GameMode enum - compare with == GameMode.CREATIVE etc.
- *  - LevelStorage.loadSummaries() takes a LevelStorage.LevelList, obtained via getLevelList()
- *  - client field is protected in Screen; store reference in constructor
- *  - World loading via SelectWorldScreen for reliability
+ * <p>Layout structure: see {@code assets/skyz_client/owo_ui/singleplayer.xml}.
+ *
+ * <p>World cards are built programmatically from {@code LevelStorage.loadSummaries(...)}
+ * in {@link #rebuildList} and injected into the {@code world-list} flow.
+ * Card actions:
+ * <ul>
+ *   <li><b>Play</b> — {@code mc.createIntegratedServerLoader().start(name, onCancel)},
+ *       same as the original screen.</li>
+ *   <li><b>Edit</b> — opens vanilla {@link EditWorldScreen} (rename + backup + reset
+ *       icon). The original Skyz screen just toasted on Edit; we wire up the real
+ *       vanilla flow now so feature parity matches the Multiplayer port.</li>
+ *   <li><b>Delete</b> — Skyz-styled confirmation overlay then walks the level
+ *       directory and deletes it. Reload happens automatically because
+ *       rebuildList() refetches summaries.</li>
+ * </ul>
+ *
+ * <p>World loading is async — {@code loadSummaries(...)} returns a
+ * CompletableFuture so we don't stall the screen on first-open if there are
+ * many worlds. Same lag-free pattern as the Multiplayer port's daemon-thread
+ * pinger.
  */
-public class SkyzSingleplayerScreen extends Screen {
+public class SkyzSingleplayerScreen extends BaseUIModelScreen<FlowLayout> {
 
     private final SkyzTitleScreen parent;
     private final MinecraftClient mc;
 
-    private List<LevelSummary> worlds   = new ArrayList<>();
-    private boolean            loaded   = false;
-    private boolean            failed   = false;
+    private List<LevelSummary> worlds = new ArrayList<>();
+    private boolean loaded = false;
+    private boolean failed = false;
 
-    private String searchQuery  = "";
-    private String activeFilter = "all";
-    private int    scrollOffset = 0;
+    // Owo refs (resolved in build()).
+    private FlowLayout       listContainer;
+    private LabelComponent   countLabel;
+    private TextBoxComponent searchBox;
+    private ButtonComponent  filAllBtn, filSurvivalBtn, filCreativeBtn, filHardcoreBtn;
 
-    private static final int NAV_H     = 30;
-    private static final int TOOLBAR_H = 28;
-    private static final int CARD_H    = 72;
-    private static final int CARD_GAP  = 6;
-    private static final int PAD       = 12;
+    private String  searchQuery   = "";
+    private String  activeFilter  = "all";
+
+    // Delete-confirmation overlay state (Java-rendered, like multiplayer's
+    // direct-connect modal). When non-null, blocks all owo input.
+    private LevelSummary deletePending = null;
 
     public SkyzSingleplayerScreen(SkyzTitleScreen parent) {
-        super(Text.literal("Singleplayer"));
+        super(FlowLayout.class, Identifier.of("skyz_client", "singleplayer"));
         this.parent = parent;
         this.mc     = MinecraftClient.getInstance();
         loadWorlds();
     }
 
+    /** Loads the world summaries off the disk; safe to call multiple times. */
     private void loadWorlds() {
+        loaded = false;
+        failed = false;
         try {
-            // getLevelList() returns the list of saved worlds in 1.21.11
-            var list = mc.getLevelStorage().getLevelList();
+            LevelStorage.LevelList list = mc.getLevelStorage().getLevelList();
+            // .join() blocks the calling thread but loadSummaries() already
+            // does its disk work on a background pool — the join here is
+            // essentially instant once that pool finishes. For UX, this could
+            // be made fully async with a dirty flag if it ever becomes a hang.
             worlds = mc.getLevelStorage().loadSummaries(list).join();
             loaded = true;
         } catch (Exception e) {
-            net.skyz.client.SkyzClientMod.LOGGER.warn("[Skyz] World load failed: {}", e.getMessage());
+            SkyzClientMod.LOGGER.warn("[Skyz] World load failed: {}", e.getMessage());
             failed = true;
         }
     }
 
+    // ─── Build (owo wiring) ──────────────────────────────────────────────
     @Override
-    protected void init() {
-        addDrawableChild(SkyzButton.of(width - 82, 7, 74, 18, "\u2190 Back",
-                () -> client.setScreen(parent)));
-        addDrawableChild(SkyzButton.of(PAD, NAV_H + 4, 130, 20, "+ Create World",
-                () -> client.setScreen(new SelectWorldScreen(this))));
+    protected void build(FlowLayout root) {
+        SkyzClientMod.LOGGER.info("[Skyz] Singleplayer built. Worlds={}, failed={}.",
+                worlds.size(), failed);
+
+        wire(root, "btn-back",             () -> client.setScreen(parent), SkyzButtonRenderer.NAV_BACK);
+        wire(root, "btn-create-world",     () -> client.setScreen(new SelectWorldScreen(this)),
+                SkyzButtonRenderer.DEFAULT);
+        wire(root, "btn-vanilla-selector", () -> client.setScreen(new SelectWorldScreen(this)),
+                SkyzButtonRenderer.NAV_BACK);
+
+        // Filter pills.
+        filAllBtn      = root.childById(ButtonComponent.class, "btn-filter-all");
+        filSurvivalBtn = root.childById(ButtonComponent.class, "btn-filter-survival");
+        filCreativeBtn = root.childById(ButtonComponent.class, "btn-filter-creative");
+        filHardcoreBtn = root.childById(ButtonComponent.class, "btn-filter-hardcore");
+        if (filAllBtn      != null) filAllBtn.onPress(b      -> { activeFilter = "all";       refreshFilters(); rebuildList(); });
+        if (filSurvivalBtn != null) filSurvivalBtn.onPress(b -> { activeFilter = "survival";  refreshFilters(); rebuildList(); });
+        if (filCreativeBtn != null) filCreativeBtn.onPress(b -> { activeFilter = "creative";  refreshFilters(); rebuildList(); });
+        if (filHardcoreBtn != null) filHardcoreBtn.onPress(b -> { activeFilter = "hardcore";  refreshFilters(); rebuildList(); });
+        refreshFilters();
+
+        // Search box.
+        searchBox = root.childById(TextBoxComponent.class, "tb-search");
+        if (searchBox != null) {
+            searchBox.setDrawsBackground(false);
+            searchBox.onChanged().subscribe(value -> {
+                searchQuery = value;
+                rebuildList();
+            });
+        }
+        FlowLayout searchWrapper = root.childById(FlowLayout.class, "search-wrapper");
+        if (searchWrapper != null) searchWrapper.surface(SkyzSurface.PILL_INPUT);
+
+        // List container + count label.
+        listContainer = root.childById(FlowLayout.class, "world-list");
+        countLabel    = root.childById(LabelComponent.class, "lbl-count");
+
+        ScrollContainer<?> scroll = root.childById(ScrollContainer.class, "scroll-world-list");
+        if (scroll != null) {
+            scroll.scrollbar(ScrollContainer.Scrollbar.flat(Color.ofArgb(0xCC8CD2FF)));
+        }
+
+        rebuildList();
     }
 
-    @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        SkyzRenderHelper.fillGradientV(ctx, 0, 0, width, height, SkyzTheme.BG1, SkyzTheme.BG2);
-        drawNavBar(ctx);
-        drawToolbar(ctx, mouseX, mouseY);
+    private void wire(FlowLayout root, String id, Runnable action,
+                      ButtonComponent.Renderer renderer) {
+        ButtonComponent btn = root.childById(ButtonComponent.class, id);
+        if (btn == null) {
+            SkyzClientMod.LOGGER.warn("[Skyz] Singleplayer: button id '{}' not found.", id);
+            return;
+        }
+        btn.onPress(b -> action.run());
+        btn.renderer(renderer);
+    }
+
+    private void refreshFilters() {
+        ButtonComponent[] btns = {filAllBtn, filSurvivalBtn, filCreativeBtn, filHardcoreBtn};
+        String[]          keys = {"all",       "survival",      "creative",      "hardcore"};
+        for (int i = 0; i < btns.length; i++) {
+            if (btns[i] == null) continue;
+            btns[i].renderer(activeFilter.equals(keys[i])
+                    ? SkyzButtonRenderer.DEFAULT
+                    : SkyzButtonRenderer.NAV_BACK);
+        }
+    }
+
+    // ─── World list / cards ──────────────────────────────────────────────
+    private void rebuildList() {
+        if (listContainer == null) return;
+        listContainer.clearChildren();
 
         if (failed) {
-            ctx.drawCenteredTextWithShadow(textRenderer,
-                    "Could not load worlds. Click to open vanilla world selector.",
-                    width / 2, height / 2 - 14, SkyzColors.TEXT_MUTED);
-            addDrawableChild(SkyzButton.of(width / 2 - 100, height / 2 + 4, 200, 20,
-                    "\uD83C\uDF0D Open World Selection",
-                    () -> client.setScreen(new SelectWorldScreen(this))));
-        } else if (!loaded) {
-            ctx.drawCenteredTextWithShadow(textRenderer,
-                    "Loading worlds...", width / 2, height / 2, SkyzColors.TEXT_MUTED);
-        } else {
-            drawWorldList(ctx, mouseX, mouseY);
+            FlowLayout msg = UIContainers.verticalFlow(Sizing.fill(100), Sizing.content());
+            msg.horizontalAlignment(HorizontalAlignment.CENTER);
+            msg.padding(Insets.vertical(20));
+            msg.gap(8);
+            msg.child(UIComponents.label(Text.literal(
+                            "Could not load worlds. Open the vanilla selector to recover."))
+                    .color(Color.ofArgb(SkyzColors.TEXT_MUTED)));
+            ButtonComponent open = UIComponents.button(
+                            Text.literal("🌍  OPEN VANILLA SELECTOR"),
+                            b -> client.setScreen(new SelectWorldScreen(this)))
+                    .renderer(SkyzButtonRenderer.DEFAULT);
+            open.horizontalSizing(Sizing.fixed(220));
+            open.verticalSizing(Sizing.fixed(22));
+            msg.child(open);
+            listContainer.child(msg);
+            if (countLabel != null) countLabel.text(Text.literal("0 worlds"));
+            return;
         }
 
-        super.render(ctx, mouseX, mouseY, delta);
-        parent.toast.render(ctx, width, delta);
-    }
-
-    private void drawNavBar(DrawContext ctx) {
-        ctx.drawTextWithShadow(textRenderer, "SKYZ", 10, 10, 0xFFF0F8FF);
-        int x = 10 + textRenderer.getWidth("SKYZ") + 6;
-        ctx.drawTextWithShadow(textRenderer, "/", x, 10, 0x4D8CD2FF);
-        x += textRenderer.getWidth("/") + 6;
-        ctx.drawTextWithShadow(textRenderer, "SINGLEPLAYER", x, 10, 0x888CD2FF);
-        SkyzRenderHelper.drawDivider(ctx, 0, NAV_H, width);
-    }
-
-    private void drawToolbar(DrawContext ctx, int mx, int my) {
-        int ty = NAV_H + 4;
-        int sX = PAD + 138, sW = Math.min(220, width - sX - PAD - 80);
-        SkyzRenderHelper.fillPanel(ctx, sX, ty, sW, 20, 0x55091E46, 0x338CD2FF);
-        String q = searchQuery.isEmpty() ? "Search worlds..." : searchQuery;
-        ctx.drawTextWithShadow(textRenderer, q, sX + 6, ty + 6,
-                searchQuery.isEmpty() ? 0x388CD2FF : SkyzColors.TEXT_PRIMARY);
-
-        int fx = sX + sW + 8;
-        for (String[] f : new String[][]{{"all","All"},{"survival","Survival"},{"creative","Creative"},{"hardcore","Hardcore"}}) {
-            boolean active = activeFilter.equals(f[0]);
-            int fw = textRenderer.getWidth(f[1]) + 14;
-            SkyzRenderHelper.fillPanel(ctx, fx, ty, fw, 20,
-                    active ? 0x553C6E90 : 0x33091E46, active ? 0x998CD2FF : 0x338CD2FF);
-            ctx.drawTextWithShadow(textRenderer, f[1], fx + 7, ty + 6,
-                    active ? 0xFFFFFFFF : SkyzColors.TEXT_MUTED);
-            fx += fw + 4;
+        if (!loaded) {
+            LabelComponent loading = UIComponents
+                    .label(Text.literal("Loading worlds..."))
+                    .color(Color.ofArgb(SkyzColors.TEXT_MUTED))
+                    .horizontalTextAlignment(HorizontalAlignment.CENTER);
+            loading.horizontalSizing(Sizing.fill(100));
+            loading.margins(Insets.vertical(20));
+            listContainer.child(loading);
+            return;
         }
 
-        List<LevelSummary> vis = getFiltered();
-        String cnt = vis.size() + " world" + (vis.size() == 1 ? "" : "s");
-        ctx.drawTextWithShadow(textRenderer, cnt, width - PAD - textRenderer.getWidth(cnt), ty + 6, 0x4D8CD2FF);
-    }
-
-    private void drawWorldList(DrawContext ctx, int mx, int my) {
-        List<LevelSummary> filtered = getFiltered();
-        int listTop = NAV_H + TOOLBAR_H + 8;
-        int listH   = height - listTop - 8;
-        int cardW   = width - PAD * 2;
-        int y       = listTop - scrollOffset;
-
-        ctx.enableScissor(0, listTop, width, height - 8);
-        for (LevelSummary w : filtered) {
-            if (y + CARD_H >= listTop && y <= listTop + listH)
-                drawCard(ctx, w, PAD, y, cardW, CARD_H, mx, my);
-            y += CARD_H + CARD_GAP;
-        }
-        ctx.disableScissor();
-
-        if (filtered.isEmpty() && loaded) {
-            int cY = NAV_H + TOOLBAR_H + 8 + (height - NAV_H - TOOLBAR_H - 16) / 2;
-            ctx.drawCenteredTextWithShadow(textRenderer,
-                    searchQuery.isEmpty() ? "No worlds yet. Create one!" : "No worlds match \"" + searchQuery + "\"",
-                    width / 2, cY, SkyzColors.TEXT_MUTED);
+        List<LevelSummary> visible = getFiltered();
+        if (countLabel != null) {
+            countLabel.text(Text.literal(visible.size() + " world"
+                    + (visible.size() == 1 ? "" : "s")));
         }
 
-        // Scrollbar
-        int totalH = filtered.size() * (CARD_H + CARD_GAP);
-        if (totalH > listH && filtered.size() > 0) {
-            SkyzRenderHelper.fillRect(ctx, width - 4, listTop, 3, listH, 0x1A8CD2FF);
-            int th  = Math.max(20, (int)((float) listH / totalH * listH));
-            int ty2 = listTop + (int)((float) scrollOffset / Math.max(1, totalH - listH) * (listH - th));
-            SkyzRenderHelper.fillRect(ctx, width - 4, ty2, 3, th, 0x558CD2FF);
+        if (visible.isEmpty()) {
+            String msg = worlds.isEmpty()
+                    ? "No worlds yet. Click + Create World."
+                    : "No worlds match \"" + searchQuery + "\".";
+            LabelComponent empty = UIComponents
+                    .label(Text.literal(msg))
+                    .color(Color.ofArgb(SkyzColors.TEXT_MUTED))
+                    .horizontalTextAlignment(HorizontalAlignment.CENTER);
+            empty.horizontalSizing(Sizing.fill(100));
+            empty.margins(Insets.vertical(20));
+            listContainer.child(empty);
+            return;
+        }
+
+        for (LevelSummary w : visible) {
+            listContainer.child(buildCard(w));
         }
     }
 
-    private void drawCard(DrawContext ctx, LevelSummary w,
-                          int x, int y, int ww, int h, int mx, int my) {
-        boolean hov = mx >= x && mx <= x + ww && my >= y && my <= y + h;
-        SkyzRenderHelper.fillPanel(ctx, x, y, ww, h,
-                hov ? 0x800C2A5A : SkyzColors.CARD_BG, hov ? 0x478CD2FF : SkyzColors.CARD_BORDER);
+    private FlowLayout buildCard(LevelSummary w) {
+        FlowLayout card = UIContainers.horizontalFlow(Sizing.fill(100), Sizing.fixed(60));
+        card.gap(10);
+        card.padding(Insets.of(8, 8, 12, 12));
+        card.verticalAlignment(VerticalAlignment.CENTER);
+        card.surface(SkyzSurface.CARD);
 
-        // Icon based on game mode
+        // ── Mode-icon box (square pill) ──
         boolean hardcore = w.isHardcore();
-        GameMode gm = w.getGameMode();
-        String emoji = hardcore ? "\uD83D\uDC80"
-                : gm == GameMode.CREATIVE ? "\uD83C\uDFD7"
-                : gm == GameMode.ADVENTURE ? "\uD83D\uDDE1"
-                : "\uD83C\uDF10";
-        ctx.drawTextWithShadow(textRenderer, emoji, x + 12, y + (h - 8) / 2, 0xFFFFFFFF);
+        GameMode gm      = w.getGameMode();
+        String icon =
+                hardcore                       ? "💀"
+                : gm == GameMode.CREATIVE      ? "🏗"
+                : gm == GameMode.ADVENTURE     ? "🗡"
+                : gm == GameMode.SPECTATOR     ? "👻"
+                                                 : "🌐";
+        FlowLayout iconBox = UIContainers.horizontalFlow(Sizing.fixed(36), Sizing.fixed(36));
+        iconBox.horizontalAlignment(HorizontalAlignment.CENTER);
+        iconBox.verticalAlignment(VerticalAlignment.CENTER);
+        iconBox.surface(SkyzSurface.PILL_INPUT);
+        iconBox.child(UIComponents.label(Text.literal(icon)));
+        card.child(iconBox);
 
-        int tx = x + 30;
-        // getDisplayName() returns String in 1.21.11
-        String displayName = w.getDisplayName();
-        ctx.drawTextWithShadow(textRenderer, displayName, tx, y + 8, SkyzColors.TEXT_PRIMARY);
-        ctx.drawTextWithShadow(textRenderer, w.getName(), tx, y + 20, 0x4D8CD2FF);
+        // ── Info column ──
+        FlowLayout info = UIContainers.verticalFlow(Sizing.expand(), Sizing.content());
+        info.gap(2);
 
-        // Last played
+        info.child(UIComponents.label(Text.literal(w.getDisplayName()))
+                .color(Color.ofArgb(SkyzColors.TEXT_PRIMARY)));
+        info.child(UIComponents.label(Text.literal(w.getName()))
+                .color(Color.ofArgb(0xFF4D8CD2)));
+
         String date = w.getLastPlayed() > 0
                 ? new SimpleDateFormat("d MMM yyyy").format(new Date(w.getLastPlayed()))
                 : "Unknown";
         String mode = getModeName(w);
-        ctx.drawTextWithShadow(textRenderer, date + "  \u00B7  " + mode, tx, y + 32, 0x558CD2FF);
+        info.child(UIComponents.label(Text.literal(date + "  ·  " + mode))
+                .color(Color.ofArgb(0xFF778CD2)));
+        card.child(info);
 
-        // Mode tag
-        int tagCol = hardcore ? 0x99FF4444
-                : gm == GameMode.CREATIVE ? 0x994DB4FF
-                : 0x9944CC88;
-        int tagW = textRenderer.getWidth(mode) + 8;
-        SkyzRenderHelper.fillPanel(ctx, tx, y + 46, tagW, 13,
-                SkyzColors.withAlpha(tagCol, 0x22), SkyzColors.withAlpha(tagCol, 0x66));
-        ctx.drawTextWithShadow(textRenderer, mode, tx + 4, y + 49, tagCol);
+        // ── Action buttons ──
+        FlowLayout actions = UIContainers.horizontalFlow(Sizing.content(), Sizing.content());
+        actions.gap(3);
+        actions.verticalAlignment(VerticalAlignment.CENTER);
 
-        // Buttons
-        int bx = x + ww - 122, by = y + (h - 16) / 2;
-        drawSmallBtn(ctx, "Play",   bx,      by, 52, 16, true,  mx, my);
-        drawSmallBtn(ctx, "Edit",   bx + 56, by, 38, 16, false, mx, my);
-        drawSmallBtn(ctx, "Del",    bx + 98, by, 30, 16, false, mx, my);
+        ButtonComponent playBtn = UIComponents
+                .button(Text.literal("PLAY"), b -> playWorld(w))
+                .renderer(SkyzButtonRenderer.DEFAULT);
+        playBtn.horizontalSizing(Sizing.fixed(56));
+        playBtn.verticalSizing(Sizing.fixed(20));
+        actions.child(playBtn);
+
+        ButtonComponent editBtn = UIComponents
+                .button(Text.literal("✏"), b -> editWorld(w))
+                .renderer(SkyzButtonRenderer.NAV_BACK);
+        editBtn.horizontalSizing(Sizing.fixed(22));
+        editBtn.verticalSizing(Sizing.fixed(20));
+        actions.child(editBtn);
+
+        ButtonComponent deleteBtn = UIComponents
+                .button(Text.literal("🗑"), b -> deletePending = w)
+                .renderer(SkyzButtonRenderer.QUIT);
+        deleteBtn.horizontalSizing(Sizing.fixed(22));
+        deleteBtn.verticalSizing(Sizing.fixed(20));
+        actions.child(deleteBtn);
+
+        card.child(actions);
+        return card;
     }
 
-    private String getModeName(LevelSummary w) {
-        if (w.isHardcore()) return "Hardcore";
-        GameMode gm = w.getGameMode();
-        if (gm == GameMode.CREATIVE)   return "Creative";
-        if (gm == GameMode.ADVENTURE)  return "Adventure";
-        if (gm == GameMode.SPECTATOR)  return "Spectator";
-        return "Survival";
-    }
-
-    private void drawSmallBtn(DrawContext ctx, String label, int x, int y, int w, int h,
-                              boolean primary, int mx, int my) {
-        boolean hov = mx >= x && mx <= x + w && my >= y && my <= y + h;
-        SkyzRenderHelper.fillPanel(ctx, x, y, w, h,
-                primary ? (hov ? 0x661E6EC8 : 0x441864A0) : (hov ? 0x66143C6E : 0x33091E46),
-                primary ? 0x558CD2FF : 0x338CD2FF);
-        ctx.drawCenteredTextWithShadow(textRenderer, label, x + w / 2, y + (h - 8) / 2,
-                hov ? 0xFFFFFFFF : SkyzColors.TEXT_MUTED);
-    }
-
-    // \u2500\u2500 Input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-    @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
-        if (super.mouseClicked(click, doubled)) return true;
-        double mx = click.x(), my = click.y();
-
-        // Filter buttons
-        int ty = NAV_H + 4, sX = PAD + 138;
-        int sW = Math.min(220, width - sX - PAD - 80);
-        int fx = sX + sW + 8;
-        for (String[] f : new String[][]{{"all","All"},{"survival","Survival"},{"creative","Creative"},{"hardcore","Hardcore"}}) {
-            int fw = textRenderer.getWidth(f[1]) + 14;
-            if (mx >= fx && mx <= fx + fw && my >= ty && my <= ty + 20) {
-                activeFilter = f[0]; scrollOffset = 0; return true;
-            }
-            fx += fw + 4;
+    // ─── Card actions ────────────────────────────────────────────────────
+    private void playWorld(LevelSummary w) {
+        if (w.isLocked()) {
+            if (parent != null) parent.toast("World is locked!");
+            return;
         }
-
-        // Card buttons
-        if (loaded) {
-            List<LevelSummary> filtered = getFiltered();
-            int listTop = NAV_H + TOOLBAR_H + 8;
-            int cardW   = width - PAD * 2;
-            int y       = listTop - scrollOffset;
-            for (LevelSummary w : filtered) {
-                int bx = PAD + cardW - 122, by = y + (CARD_H - 16) / 2;
-                // Play
-                if (mx >= bx && mx <= bx + 52 && my >= by && my <= by + 16) {
-                    openWorld(w); return true;
-                }
-                // Edit
-                if (mx >= bx+56 && mx <= bx+94 && my >= by && my <= by+16) {
-                    parent.toast("Edit: " + w.getDisplayName()); return true;
-                }
-                // Delete
-                if (mx >= bx+98 && mx <= bx+128 && my >= by && my <= by+16) {
-                    parent.toast("Delete: " + w.getDisplayName()); return true;
-                }
-                y += CARD_H + CARD_GAP;
-            }
-        }
-        return false;
-    }
-
-    private void openWorld(LevelSummary w) {
-        if (w.isLocked()) { parent.toast("World is locked!"); return; }
         // IntegratedServerLoader.start(String worldName, Runnable onCancel)
         mc.createIntegratedServerLoader().start(w.getName(), () -> mc.setScreen(this));
     }
 
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double h, double v) {
-        int listH  = height - (NAV_H + TOOLBAR_H + 8) - 8;
-        int totalH = getFiltered().size() * (CARD_H + CARD_GAP);
-        scrollOffset = (int) Math.max(0, Math.min(Math.max(0, totalH - listH), scrollOffset - v * 16));
-        return true;
-    }
-
-    @Override
-    public boolean charTyped(CharInput input) {
-        String s = input.asString();
-        if (!s.isEmpty()) { searchQuery += s; scrollOffset = 0; }
-        return true;
-    }
-
-    @Override
-    public boolean keyPressed(KeyInput input) {
-        if (input.getKeycode() == 259 && !searchQuery.isEmpty()) {
-            searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
-            scrollOffset = 0; return true;
+    /**
+     * Open vanilla EditWorldScreen — gives the user rename, reset icon, and
+     * backup actions for free. The factory throws IOException if the world
+     * folder can't be opened (rare); we surface that as a toast.
+     */
+    private void editWorld(LevelSummary w) {
+        try {
+            LevelStorage.Session session = mc.getLevelStorage().createSession(w.getName());
+            // EditWorldScreen.create takes a callback fired with `true` if the
+            // user clicked Save; we just refresh the world list either way and
+            // return to ourselves.
+            EditWorldScreen edit = EditWorldScreen.create(mc, session, saved -> {
+                try { session.close(); } catch (IOException ignored) {}
+                loadWorlds();
+                rebuildList();
+                mc.setScreen(this);
+            });
+            mc.setScreen(edit);
+        } catch (Exception e) {
+            SkyzClientMod.LOGGER.warn("[Skyz] Edit world '{}' failed: {}", w.getName(), e.getMessage());
+            if (parent != null) parent.toast("Could not edit: " + e.getMessage());
         }
-        return super.keyPressed(input);
     }
 
-    @Override public boolean shouldPause() { return false; }
+    /**
+     * Walks the world directory and deletes every file/directory bottom-up.
+     * Vanilla does the same thing in {@code WorldListWidget#deleteWorld} — we
+     * inline it here rather than reflect into the package-private worker.
+     */
+    private void deleteWorld(LevelSummary w) {
+        try (LevelStorage.Session session = mc.getLevelStorage().createSession(w.getName())) {
+            Path levelRoot = session.getDirectory(WorldSavePath.ROOT);
+            // levelRoot is the level.dat parent (i.e. saves/<name>/). Walk +
+            // delete reverse-order so directories empty before they're removed.
+            try (var paths = Files.walk(levelRoot)) {
+                paths.sorted(Comparator.reverseOrder())
+                     .forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ignored) {} });
+            }
+        } catch (Exception e) {
+            SkyzClientMod.LOGGER.warn("[Skyz] Delete world '{}' failed: {}", w.getName(), e.getMessage());
+            if (parent != null) parent.toast("Delete failed: " + e.getMessage());
+            return;
+        }
+        if (parent != null) parent.toast("Deleted " + w.getDisplayName());
+        loadWorlds();
+        rebuildList();
+    }
 
+    // ─── Filtering ───────────────────────────────────────────────────────
     private List<LevelSummary> getFiltered() {
         String q = searchQuery.toLowerCase();
         List<LevelSummary> out = new ArrayList<>();
@@ -317,5 +384,103 @@ public class SkyzSingleplayerScreen extends Screen {
             if (cat && term) out.add(w);
         }
         return out;
+    }
+
+    private static String getModeName(LevelSummary w) {
+        if (w.isHardcore()) return "Hardcore";
+        GameMode gm = w.getGameMode();
+        if (gm == GameMode.CREATIVE)  return "Creative";
+        if (gm == GameMode.ADVENTURE) return "Adventure";
+        if (gm == GameMode.SPECTATOR) return "Spectator";
+        return "Survival";
+    }
+
+    // ─── Render (gradient bg + delete confirm overlay) ───────────────────
+    @Override public boolean shouldPause() { return false; }
+
+    @Override
+    public void renderBackground(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        // Painted by render(), so no-op here.
+    }
+
+    @Override
+    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        // 1) Gradient background.
+        SkyzRenderHelper.fillGradientV(ctx, 0, 0,             width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
+        SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,    width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
+        SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3,  width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
+
+        // 2) Owo (nav, action, toolbar, world list).
+        super.render(ctx, mouseX, mouseY, delta);
+
+        // 3) Delete-confirmation overlay (modal — eats clicks/keys).
+        if (deletePending != null) drawDeleteOverlay(ctx, mouseX, mouseY);
+
+        // 4) Toast.
+        if (parent != null) parent.toast.render(ctx, width, delta);
+    }
+
+    private void drawDeleteOverlay(DrawContext ctx, int mx, int my) {
+        ctx.fill(0, 0, width, height, 0xCC050F2A);
+
+        int bw = 360, bh = 130, bx = (width - bw) / 2, by = (height - bh) / 2;
+        SkyzRenderHelper.fillRoundedRect(ctx, bx, by, bw, bh, 12, 0xEE071830);
+        SkyzRenderHelper.drawRoundedBorder(ctx, bx, by, bw, bh, 12, 0xAAFF6666);
+
+        ctx.drawCenteredTextWithShadow(textRenderer, "Delete world?",
+                width / 2, by + 14, 0xFFFFAAAA);
+        ctx.drawCenteredTextWithShadow(textRenderer,
+                "\"" + deletePending.getDisplayName() + "\" will be permanently deleted.",
+                width / 2, by + 34, SkyzColors.TEXT_PRIMARY);
+        ctx.drawCenteredTextWithShadow(textRenderer,
+                "This cannot be undone.",
+                width / 2, by + 48, SkyzColors.TEXT_MUTED);
+
+        // Buttons.
+        int btnY = by + bh - 32;
+        boolean delHov = mx >= bx + 14         && mx <= bx + 174         && my >= btnY && my <= btnY + 22;
+        boolean caHov  = mx >= bx + bw - 174   && mx <= bx + bw - 14     && my >= btnY && my <= btnY + 22;
+
+        SkyzRenderHelper.fillRoundedRect(ctx, bx + 14,        btnY, 160, 22, 8,
+                delHov ? 0xCC8C2832 : 0x80140A12);
+        SkyzRenderHelper.drawRoundedBorder(ctx, bx + 14,      btnY, 160, 22, 8,
+                delHov ? 0xCCFF7878 : 0x66FF8C8C);
+
+        SkyzRenderHelper.fillRoundedRect(ctx, bx + bw - 174,  btnY, 160, 22, 8,
+                caHov ? 0x66143C6E : 0x33091E46);
+        SkyzRenderHelper.drawRoundedBorder(ctx, bx + bw - 174, btnY, 160, 22, 8,
+                caHov ? 0x998CDCFF : 0x4D8CDCFF);
+
+        ctx.drawCenteredTextWithShadow(textRenderer, "Delete forever",
+                bx + 94, btnY + 7, delHov ? 0xFFFFFFFF : 0xCCFFAAAA);
+        ctx.drawCenteredTextWithShadow(textRenderer, "Cancel",
+                bx + bw - 94, btnY + 7, caHov ? 0xFFFFFFFF : SkyzColors.TEXT_MUTED);
+    }
+
+    @Override
+    public boolean mouseClicked(Click click, boolean doubled) {
+        if (deletePending != null) {
+            double mx = click.x(), my = click.y();
+            int bw = 360, bh = 130, bx = (width - bw) / 2, by = (height - bh) / 2;
+            int btnY = by + bh - 32;
+            if (mx >= bx + 14 && mx <= bx + 174 && my >= btnY && my <= btnY + 22) {
+                LevelSummary w = deletePending;
+                deletePending = null;
+                deleteWorld(w);
+                return true;
+            }
+            if (mx >= bx + bw - 174 && mx <= bx + bw - 14 && my >= btnY && my <= btnY + 22) {
+                deletePending = null;
+                return true;
+            }
+            return true;  // swallow other clicks while modal open
+        }
+        return super.mouseClicked(click, doubled);
+    }
+
+    @Override
+    public void close() {
+        if (deletePending != null) { deletePending = null; return; }
+        if (client != null) client.setScreen(parent);
     }
 }

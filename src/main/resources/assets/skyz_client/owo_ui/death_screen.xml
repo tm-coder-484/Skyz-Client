@@ -1,0 +1,70 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Death Screen — owo-lib edition (Phase 2d).
+
+      Replaces vanilla DeathScreen. Vanilla also gates Respawn on a
+      ticks-since-death cooldown to prevent accidental spam-clicking
+      through the menu; we mirror that behaviour by setting `active(false)`
+      on the Respawn button when ticksSinceDeath < cooldown threshold,
+      then flipping it back true on tick.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+
+            <children>
+                <flow-layout id="card" direction="vertical">
+                    <sizing>
+                        <horizontal method="fixed">320</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <padding>
+                        <top>20</top>
+                        <bottom>20</bottom>
+                        <left>20</left>
+                        <right>20</right>
+                    </padding>
+                    <gap>6</gap>
+                    <horizontal-alignment>center</horizontal-alignment>
+
+                    <children>
+                        <label id="lbl-title">
+                            <text>YOU DIED!</text>
+                            <color>#FFFF6464</color>
+                        </label>
+                        <label id="lbl-cause">
+                            <text>...</text>
+                            <color>#FFEEEEEE</color>
+                        </label>
+                        <label id="lbl-score">
+                            <text>Score: 0</text>
+                            <color>#FFFFEE7D</color>
+                            <margins><bottom>10</bottom></margins>
+                        </label>
+
+                        <button id="btn-respawn">
+                            <text>↻  RESPAWN</text>
+                            <sizing>
+                                <horizontal method="fixed">280</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-title">
+                            <text>⏻  TITLE SCREEN</text>
+                            <sizing>
+                                <horizontal method="fixed">280</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

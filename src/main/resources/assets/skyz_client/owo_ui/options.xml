@@ -1,0 +1,130 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Options (top-level) — owo-lib edition (Phase 2d).
+
+      Replaces vanilla OptionsScreen — the routing screen with buttons
+      that open Skin / Sounds / Video / Controls / Language / Chat /
+      Resource Packs / Accessibility / Telemetry sub-screens.
+
+      The sub-screens themselves stay vanilla. Each is tied to vanilla's
+      SimpleOption<T>.asWidget machinery and recreating them risks
+      breaking option persistence on MC point releases — so this screen
+      is purely chrome + routing.
+
+      Layout: nav bar + 2-column grid of sub-screen buttons + a wide
+      DONE button at the bottom.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>OPTIONS</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!--
+                  Centered card with the options-routing buttons.
+                  Built as a 2-col grid in Java so we can wire each button
+                  to its vanilla sub-screen constructor.
+                -->
+                <!--
+                  Centered card host — uses expand(100) so the card area
+                  takes all remaining height between nav bar + done. The
+                  card itself is wrapped in a scroll container so it never
+                  gets clipped when the contents (mod shortcuts + routing
+                  grid) grow past the viewport. Without the scroll the
+                  card was getting top/bottom-clipped by the center-aligned
+                  parent when 4 shortcut buttons + 5 routing rows pushed
+                  past the visible height.
+                -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="expand">100</vertical>
+                    </sizing>
+                    <horizontal-alignment>center</horizontal-alignment>
+                    <vertical-alignment>top</vertical-alignment>
+                    <children>
+                        <!--
+                          owo <scroll> gotcha: the wrapped flow-layout MUST
+                          be the first element child, BEFORE any property
+                          elements (sizing, scrollbar-thiccness, scroll-step).
+                          See SKYZ_PORT_NOTES.md gotcha #10 — using <child>
+                          as a wrapper or putting properties first triggers
+                          "Could not initialize container child" at parse
+                          time, which is exactly what was crashing the
+                          Options screen on open.
+                        -->
+                        <scroll id="scroll-options" direction="vertical">
+                            <flow-layout id="card" direction="vertical">
+                                <sizing>
+                                    <horizontal method="fill">100</horizontal>
+                                    <vertical method="content"/>
+                                </sizing>
+                                <padding>
+                                    <top>16</top>
+                                    <bottom>16</bottom>
+                                    <left>20</left>
+                                    <right>20</right>
+                                </padding>
+                                <gap>6</gap>
+                                <horizontal-alignment>center</horizontal-alignment>
+                            </flow-layout>
+                            <sizing>
+                                <horizontal method="fixed">440</horizontal>
+                                <vertical method="fill">100</vertical>
+                            </sizing>
+                            <scrollbar-thiccness>4</scrollbar-thiccness>
+                            <scroll-step>30</scroll-step>
+                        </scroll>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

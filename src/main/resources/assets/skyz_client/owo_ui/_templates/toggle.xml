@@ -1,0 +1,72 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <templates>
+        <!--
+          HTML .toggle (44×24 pill). owo's small-checkbox is the closest
+          native equivalent and gives us proper a11y + keyboard handling.
+          Visually we'll re-skin via Java component config in v3.2 so
+          the thumb/track match the HTML pill exactly.
+        -->
+        <template name="toggle">
+            <flow-layout direction="horizontal">
+                <gap>10</gap>
+                <vertical-alignment>center</vertical-alignment>
+                <children>
+                    <label>
+                        <text>{{label}}</text>
+                        <color>0xFFEEF6FF</color>
+                    </label>
+                    <flow-layout direction="horizontal">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                        </sizing>
+                    </flow-layout>
+                    <small-checkbox id="{{id|}}">
+                        <text></text>
+                    </small-checkbox>
+                </children>
+            </flow-layout>
+        </template>
+
+        <!--
+          A row that mirrors HTML .opt-row: label on left, sublabel under,
+          toggle on right. Use this in settings forms.
+        -->
+        <template name="opt-row">
+            <flow-layout direction="horizontal">
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="content"/>
+                </sizing>
+                <padding>
+                    <vertical>6</vertical>
+                </padding>
+                <vertical-alignment>center</vertical-alignment>
+                <gap>10</gap>
+                <children>
+                    <flow-layout direction="vertical">
+                        <gap>2</gap>
+                        <children>
+                            <label>
+                                <text>{{label}}</text>
+                                <color>0xFFEEF6FF</color>
+                            </label>
+                            <label>
+                                <text>{{sublabel|}}</text>
+                                <color>0x778CD2FF</color>
+                            </label>
+                        </children>
+                    </flow-layout>
+                    <flow-layout direction="horizontal">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                        </sizing>
+                    </flow-layout>
+                    <small-checkbox id="{{id|}}">
+                        <text></text>
+                    </small-checkbox>
+                </children>
+            </flow-layout>
+        </template>
+    </templates>
+</owo-ui>

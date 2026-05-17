@@ -1,0 +1,88 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Phase 1 minimum-viable kitchen sink: NO templates, NO cross-file refs.
+      Goal: prove that owo loads the model, finds components by id, and
+      renders text + buttons. Once this works, we re-introduce the
+      _templates/*.xml split with the right cross-file syntax in Phase 2.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <surface>
+                <panel dark="true"/>
+            </surface>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+            <gap>14</gap>
+            <padding>
+                <all>30</all>
+            </padding>
+
+            <children>
+                <label>
+                    <text>SKYZ KITCHEN SINK</text>
+                    <color>#FFEEF6FF</color>
+                </label>
+
+                <label>
+                    <text>If you can read this, owo-lib is loading the XML correctly.</text>
+                    <color>#FF9C8CD2</color>
+                </label>
+
+                <flow-layout direction="vertical">
+                    <sizing>
+                        <horizontal method="fixed">320</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <children>
+                        <button id="ks-singleplayer">
+                            <text>SINGLEPLAYER</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                        <button id="ks-multiplayer">
+                            <text>MULTIPLAYER</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                        <button id="ks-mods">
+                            <text>MODS</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                        <button id="ks-settings">
+                            <text>SETTINGS</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                        <button id="ks-quit">
+                            <text>QUIT</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <label>
+                    <text>Press Esc to close. Buttons log to console on click.</text>
+                    <color>#FF6A8CD2</color>
+                </label>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

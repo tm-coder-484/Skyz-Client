@@ -5,7 +5,20 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "TitleScreenMixin",
-    "InGameHudMixin"
+    "GameMenuScreenMixin",
+    "DeathScreenMixin",
+    "DisconnectedScreenMixin",
+    "OptionsScreenMixin",
+    "MessageScreenMixin",
+    "ProgressScreenMixin",
+    "MultiplayerScreenMixin",
+    "InGameHudMixin",
+    "InGameHudOverlayMixin",
+    "WorldRendererMixin",
+    "FogRendererMixin",
+    "GameRendererMixin",
+    "ChatHudMixin",
+    "ParticleManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

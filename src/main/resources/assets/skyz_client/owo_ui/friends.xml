@@ -1,0 +1,105 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Friends screen — owo-lib edition (Phase 2c port).
+
+      Friends/social functionality is provided by the Essential mod. We
+      detect via FabricLoader and either:
+        - Show a "OPEN ESSENTIAL SOCIAL" button that opens Essential's
+          social screen via reflection (multiple class-name candidates +
+          EssentialAPI fallback to handle version drift)
+        - Show an install prompt linking to essential.gg if Essential
+          isn't installed.
+
+      The original screen tried to auto-open Essential's screen during
+      init() via getDeclaredConstructors()[0].newInstance(). On Essential's
+      Kotlin classes that picks a Kotlin-DSL synthetic constructor that
+      needs args, throws, and falls into the "not found" error path. The
+      port uses getConstructor() (explicit no-arg) and tries multiple
+      candidates, with status reporting on screen + via toast.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>FRIENDS</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!--
+                  Main card — populated programmatically with one of three
+                  states: Essential installed and ready, Essential failed
+                  to open, Essential not installed. Centered horizontally.
+                -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="expand">100</vertical>
+                    </sizing>
+                    <horizontal-alignment>center</horizontal-alignment>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <flow-layout id="content-card" direction="vertical">
+                            <sizing>
+                                <horizontal method="fixed">360</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                            <padding>
+                                <top>18</top>
+                                <bottom>18</bottom>
+                                <left>20</left>
+                                <right>20</right>
+                            </padding>
+                            <gap>8</gap>
+                            <horizontal-alignment>center</horizontal-alignment>
+                        </flow-layout>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

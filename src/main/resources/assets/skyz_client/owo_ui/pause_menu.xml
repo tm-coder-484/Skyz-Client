@@ -1,0 +1,156 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Pause Menu — owo-lib edition (Phase 2d).
+
+      Replaces vanilla GameMenuScreen. The mixin redirect only fires when
+      `showMenu == true` (vanilla constructs a GameMenuScreen with
+      showMenu=false during world load to pause without UI; we leave that
+      case alone so we don't accidentally show a menu mid-loading).
+
+      Layout: a centred Skyz card with:
+        - Title label
+        - Wide RESUME button
+        - 2-col grid: Achievements / Statistics
+        - 2-col grid: Send Feedback / Report Bugs
+        - 2-col grid: Options / Open to LAN
+        - Wide SAVE AND QUIT / DISCONNECT button (label set in Java
+          based on whether the integrated server is running)
+
+      Button labels and the LAN row's visibility are wired in Java so
+      we can branch on integrated-server / multiplayer / Realms state.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+
+            <children>
+                <flow-layout id="card" direction="vertical">
+                    <sizing>
+                        <horizontal method="fixed">320</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <padding>
+                        <top>16</top>
+                        <bottom>16</bottom>
+                        <left>20</left>
+                        <right>20</right>
+                    </padding>
+                    <gap>8</gap>
+                    <horizontal-alignment>center</horizontal-alignment>
+
+                    <children>
+                        <label>
+                            <text>GAME PAUSED</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label id="lbl-subtitle">
+                            <text>Skyz Client</text>
+                            <color>#888CD2FF</color>
+                            <margins><bottom>4</bottom></margins>
+                        </label>
+
+                        <!-- Wide RESUME -->
+                        <button id="btn-resume">
+                            <text>▶  RESUME GAME</text>
+                            <sizing>
+                                <horizontal method="fixed">280</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+
+                        <!-- Row: Achievements / Statistics -->
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="fixed">280</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                            <gap>6</gap>
+                            <children>
+                                <button id="btn-achievements">
+                                    <text>🏆  ACHIEVEMENTS</text>
+                                    <sizing>
+                                        <horizontal method="fixed">137</horizontal>
+                                        <vertical method="fixed">20</vertical>
+                                    </sizing>
+                                </button>
+                                <button id="btn-statistics">
+                                    <text>📊  STATISTICS</text>
+                                    <sizing>
+                                        <horizontal method="fixed">137</horizontal>
+                                        <vertical method="fixed">20</vertical>
+                                    </sizing>
+                                </button>
+                            </children>
+                        </flow-layout>
+
+                        <!-- Row: Send Feedback / Report Bugs -->
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="fixed">280</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                            <gap>6</gap>
+                            <children>
+                                <button id="btn-feedback">
+                                    <text>💬  SEND FEEDBACK</text>
+                                    <sizing>
+                                        <horizontal method="fixed">137</horizontal>
+                                        <vertical method="fixed">20</vertical>
+                                    </sizing>
+                                </button>
+                                <button id="btn-bugs">
+                                    <text>🐛  REPORT BUGS</text>
+                                    <sizing>
+                                        <horizontal method="fixed">137</horizontal>
+                                        <vertical method="fixed">20</vertical>
+                                    </sizing>
+                                </button>
+                            </children>
+                        </flow-layout>
+
+                        <!-- Row: Options / Open to LAN -->
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="fixed">280</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                            <gap>6</gap>
+                            <children>
+                                <button id="btn-options">
+                                    <text>⚙  OPTIONS</text>
+                                    <sizing>
+                                        <horizontal method="fixed">137</horizontal>
+                                        <vertical method="fixed">20</vertical>
+                                    </sizing>
+                                </button>
+                                <button id="btn-lan">
+                                    <text>🌐  OPEN TO LAN</text>
+                                    <sizing>
+                                        <horizontal method="fixed">137</horizontal>
+                                        <vertical method="fixed">20</vertical>
+                                    </sizing>
+                                </button>
+                            </children>
+                        </flow-layout>
+
+                        <!-- Wide SAVE AND QUIT / DISCONNECT (label set in Java) -->
+                        <button id="btn-quit">
+                            <text>⏻  SAVE AND QUIT TO TITLE</text>
+                            <sizing>
+                                <horizontal method="fixed">280</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                            <margins><top>4</top></margins>
+                        </button>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

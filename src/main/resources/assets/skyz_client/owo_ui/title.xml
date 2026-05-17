@@ -1,0 +1,149 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Phase 2a: Skyz title-screen main button column.
+
+      Java handles: gradient background, particles, SKYZ logo + pulsing dot,
+      splash text, hud clock strip, drag-image hint, mute button, drop-zone
+      overlay, and toasts. owo handles only the central button list — exact
+      structure mirrors skyz-client.html .main-btns:
+
+         [full]  🌍  Singleplayer
+         [full]  ◈   Multiplayer
+         [full]  🧩  Mods
+         [half | half]  ⚙   Options       | ✦  Skyz Settings
+         [full]  ✨  Cosmetics       (Essential wardrobe — full-width)
+         [half | half]  🎛  HUD Editor    | 🌅 Shaders
+         [full]  👥  Friends         (Essential social menu — direct open)
+         (4 px spacer)
+         [full]  ⊗  Quit Game     (quit-styled)
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>bottom</vertical-alignment>
+            <padding>
+                <bottom>28</bottom>
+            </padding>
+
+            <children>
+                <flow-layout direction="vertical">
+                    <id>main-btns</id>
+                    <sizing>
+                        <horizontal method="fixed">320</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>3</gap>
+
+                    <children>
+                        <button id="btn-singleplayer">
+                            <text>🌍  SINGLEPLAYER</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">19</vertical>
+                            </sizing>
+                        </button>
+
+                        <button id="btn-multiplayer">
+                            <text>◈  MULTIPLAYER</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">19</vertical>
+                            </sizing>
+                        </button>
+
+                        <button id="btn-mods">
+                            <text>🧩  MODS</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">19</vertical>
+                            </sizing>
+                        </button>
+
+                        <flow-layout direction="horizontal">
+                            <gap>3</gap>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                            <children>
+                                <button id="btn-options">
+                                    <text>⚙  OPTIONS</text>
+                                    <sizing>
+                                        <horizontal method="fill">49</horizontal>
+                                        <vertical method="fixed">19</vertical>
+                                    </sizing>
+                                </button>
+                                <button id="btn-skyz-settings">
+                                    <text>✦  SKYZ SETTINGS</text>
+                                    <sizing>
+                                        <horizontal method="fill">49</horizontal>
+                                        <vertical method="fixed">19</vertical>
+                                    </sizing>
+                                </button>
+                            </children>
+                        </flow-layout>
+
+                        <!-- Cosmetics: full-width, opens Essential's wardrobe
+                             directly (skin editor removed — vanilla skin part
+                             toggles live in Options → Skin Customization). -->
+                        <button id="btn-cosmetics">
+                            <text>✨  COSMETICS</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">19</vertical>
+                            </sizing>
+                        </button>
+
+                        <flow-layout direction="horizontal">
+                            <gap>3</gap>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                            <children>
+                                <button id="btn-hud-editor">
+                                    <text>🎛  HUD EDITOR</text>
+                                    <sizing>
+                                        <horizontal method="fill">49</horizontal>
+                                        <vertical method="fixed">19</vertical>
+                                    </sizing>
+                                </button>
+                                <button id="btn-shaders">
+                                    <text>🌅  SHADERS</text>
+                                    <sizing>
+                                        <horizontal method="fill">49</horizontal>
+                                        <vertical method="fixed">19</vertical>
+                                    </sizing>
+                                </button>
+                            </children>
+                        </flow-layout>
+
+                        <button id="btn-friends">
+                            <text>👥  FRIENDS</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">19</vertical>
+                            </sizing>
+                        </button>
+
+                        <button id="btn-quit">
+                            <text>⊗  QUIT GAME</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">19</vertical>
+                            </sizing>
+                            <margins>
+                                <top>4</top>
+                            </margins>
+                        </button>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

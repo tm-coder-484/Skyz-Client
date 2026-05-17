@@ -69,6 +69,7 @@ public final class SkyzTheme {
     }
 
     private static int parseHex(String s) {
+        if (s == null || s.length() < 3) return 0xFF000000; // safe fallback
         return (int) Long.parseLong(s.substring(2), 16);
     }
 

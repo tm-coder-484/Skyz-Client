@@ -1,0 +1,52 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <templates>
+        <!--
+          .cat-tag analogue: small uppercase pill used for categorising mods.
+          One template per variant so the {{>children}} cost is zero.
+          Colours match the HTML rgba() values, baked to ARGB.
+        -->
+        <template name="cat-tag-perf">
+            <label>
+                <text>{{label}}</text>
+                <color>0x9950DCA0</color>
+                <padding><horizontal>5</horizontal><vertical>1</vertical></padding>
+            </label>
+        </template>
+        <template name="cat-tag-visual">
+            <label>
+                <text>{{label}}</text>
+                <color>0x99C896FF</color>
+                <padding><horizontal>5</horizontal><vertical>1</vertical></padding>
+            </label>
+        </template>
+        <template name="cat-tag-pvp">
+            <label>
+                <text>{{label}}</text>
+                <color>0x99FF6464</color>
+                <padding><horizontal>5</horizontal><vertical>1</vertical></padding>
+            </label>
+        </template>
+        <template name="cat-tag-util">
+            <label>
+                <text>{{label}}</text>
+                <color>0x99FFC850</color>
+                <padding><horizontal>5</horizontal><vertical>1</vertical></padding>
+            </label>
+        </template>
+        <template name="cat-tag-hud">
+            <label>
+                <text>{{label}}</text>
+                <color>0x9964C8FF</color>
+                <padding><horizontal>5</horizontal><vertical>1</vertical></padding>
+            </label>
+        </template>
+        <template name="cat-tag-library">
+            <label>
+                <text>{{label}}</text>
+                <color>0x778CD2FF</color>
+                <padding><horizontal>5</horizontal><vertical>1</vertical></padding>
+            </label>
+        </template>
+    </templates>
+</owo-ui>

@@ -1,0 +1,76 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Disconnected Screen — owo-lib edition (Phase 2d).
+
+      Replaces vanilla DisconnectedScreen. Carries the original title +
+      reason text from vanilla so server kick messages, connection errors,
+      etc. show through verbatim.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+
+            <children>
+                <flow-layout id="card" direction="vertical">
+                    <sizing>
+                        <horizontal method="fixed">360</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <padding>
+                        <top>20</top>
+                        <bottom>20</bottom>
+                        <left>20</left>
+                        <right>20</right>
+                    </padding>
+                    <gap>8</gap>
+                    <horizontal-alignment>center</horizontal-alignment>
+
+                    <children>
+                        <label id="lbl-title">
+                            <text>DISCONNECTED</text>
+                            <color>#FFFF8888</color>
+                        </label>
+                        <label id="lbl-reason">
+                            <text>Connection lost.</text>
+                            <color>#FFEEEEEE</color>
+                            <margins>
+                                <top>4</top>
+                                <bottom>10</bottom>
+                            </margins>
+                        </label>
+
+                        <button id="btn-back">
+                            <text>← BACK TO TITLE</text>
+                            <sizing>
+                                <horizontal method="fixed">320</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+
+                        <label id="lbl-countdown">
+                            <text></text>
+                            <color>#FFAAAAFF</color>
+                            <margins>
+                                <top>6</top>
+                            </margins>
+                        </label>
+
+                        <button id="btn-cancel">
+                            <text>✕ CANCEL RECONNECT</text>
+                            <sizing>
+                                <horizontal method="fixed">320</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

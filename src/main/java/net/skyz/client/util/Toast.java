@@ -48,9 +48,14 @@ public class Toast {
         int bx     = (screenW - boxW) / 2;
         int by     = (int)(-boxH + (boxH + 18) * anim);    // slides down from -boxH
 
-        // Background panel
-        SkyzRenderHelper.fillPanel(ctx, bx, by, boxW, boxH,
-                0xE6050F32, 0x4D8CD2FF);
+        // Soft drop shadow + glass body — Feather-style toast
+        SkyzRenderHelper.drawSoftShadow(ctx, bx, by, boxW, boxH, 12);
+        SkyzRenderHelper.fillGlassPanel(ctx, bx, by, boxW, boxH, 12,
+                0xE6050F32, 0x668CD2FF);
+
+        // Accent dot on the leading edge for that Feather signature
+        SkyzRenderHelper.fillCircle(ctx, bx + 11, by + boxH/2, 3, 0xFF64C8FF);
+        SkyzRenderHelper.fillCircle(ctx, bx + 10, by + boxH/2 - 1, 1, 0xCCFFFFFF);
 
         // Text centred
         ctx.drawCenteredTextWithShadow(tr, message,
