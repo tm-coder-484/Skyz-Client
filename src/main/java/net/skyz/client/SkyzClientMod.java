@@ -29,7 +29,7 @@ public class SkyzClientMod implements ClientModInitializer {
      * a version bump here propagates everywhere without grepping for
      * hardcoded version literals.
      */
-    public static final String MOD_VERSION = "4.3.0";
+    public static final String MOD_VERSION = "4.3.1";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** Set true before ConnectScreen.connect() so TitleScreenMixin re-opens multiplayer after disconnect. */
