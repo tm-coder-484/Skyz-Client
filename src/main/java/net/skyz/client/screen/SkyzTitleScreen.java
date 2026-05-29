@@ -4,7 +4,7 @@ import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.resources.Identifier;
 import net.skyz.client.SkyzClientMod;
@@ -23,7 +23,7 @@ import java.util.List;
  *   • XML model (assets/skyz_client/owo_ui/title.xml) lays out and styles
  *     the 11-button main column. owo handles button layout, hover, and
  *     MouseButtonEvent dispatch via the wirings in {@link #build}.
- *   • This class still renders, by hand, everything that needs GuiGraphics
+ *   • This class still renders, by hand, everything that needs GuiGraphicsExtractor
  *     control: the gradient / drag-drop image background, particle system,
  *     SKYZ logo with multi-pass glow + pulsing accent dot, splash text,
  *     bottom HUD strip, drag-PNG hint, the circular mute toggle, the
@@ -32,10 +32,13 @@ import java.util.List;
  * MC's vanilla {@link #renderBackground} is no-op'd so our gradient isn't
  * overwritten by the dirt panorama. {@code BaseOwoScreen.render} already
  * calls {@code uiAdapter.render(...)} after {@code renderBackground}, so we
- * draw bg + logo first, then super.render() draws the owo column on top,
+ * draw bg + logo first, then super.extractRenderState() draws the owo column on top,
  * then we draw HUD overlays + toast on top of that.
  */
 public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     final ParticleSystem particles = new ParticleSystem();
     final Toast          toast     = new Toast();
@@ -73,7 +76,7 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
         wire(root, "btn-singleplayer",  () -> client.setScreen(new SkyzSingleplayerScreen(this)));
         wire(root, "btn-multiplayer",   () -> client.setScreen(new SkyzMultiplayerScreen(this)));
         wire(root, "btn-mods",          () -> client.setScreen(new SkyzModsScreen(this)));
-        wire(root, "btn-options",       () -> client.setScreen(new OptionsScreen(this, client.options)));
+        wire(root, "btn-options",       () -> client.setScreen(new OptionsScreen(this, client.options, false)));
         wire(root, "btn-skyz-settings", () -> client.setScreen(new SkyzSettingsScreen(this)));
         // Cosmetics — opens Essential's wardrobe directly. Falls back to
         // SkyzCosmeticsScreen (install prompt / error page) if Essential is
@@ -92,7 +95,7 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
                 client.setScreen(new SkyzFriendsScreen(this));
             }
         });
-        wire(root, "btn-quit",          () -> client.scheduleStop(),
+        wire(root, "btn-quit",          () -> client.stop(),
                                         SkyzButtonRenderer.QUIT);
     }
 
@@ -134,18 +137,18 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
         SkyzAudioManager.getInstance().stop();
     }
 
-    @Override public boolean shouldPause() { return false; }
+    @Override public boolean isPauseScreen() { return false; }
 
     public void toast(String msg) { toast.show(msg); }
 
     // ── Render ────────────────────────────────────────────────────────────
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // No-op: render() draws our own background before the owo column.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         tick += delta;
 
         // 1) Background (drag-image or gradient)
@@ -164,7 +167,7 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
         drawLogo(ctx);
 
         // 4) owo column (the main-btns)
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         // 5) HUD overlays (drawn over everything else)
         drawHudClock(ctx);
@@ -176,7 +179,7 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     // ── Background gradient ──────────────────────────────────────────────
-    private void drawGradientBackground(GuiGraphics ctx) {
+    private void drawGradientBackground(GuiGraphicsExtractor ctx) {
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,            width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,   width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3, width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
@@ -196,7 +199,7 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     // ── Logo (cinzel-ish multi-pass glow + pulsing dot) ──────────────────
-    private void drawLogo(GuiGraphics ctx) {
+    private void drawLogo(GuiGraphicsExtractor ctx) {
         int cx     = width / 2;
         int scale  = 4;
         int logoY  = (int)(height * 0.05f);
@@ -246,26 +249,26 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     // ── HUD overlays ─────────────────────────────────────────────────────
-    private void drawHudClock(GuiGraphics ctx) {
+    private void drawHudClock(GuiGraphicsExtractor ctx) {
         Calendar now = Calendar.getInstance();
         String hud = String.format("Skyz Client  ·  v%s  ·  %02d:%02d",
                 SkyzClientMod.MOD_VERSION,
                 now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE));
-        ctx.drawCenteredString(font, hud, width / 2, height - 12, 0x4D8CD2FF);
+        ctx.centeredText(font, hud, width / 2, height - 12, 0x4D8CD2FF);
     }
 
-    private void drawSplash(GuiGraphics ctx) {
-        ctx.drawString(font, splash,
+    private void drawSplash(GuiGraphicsExtractor ctx) {
+        ctx.text(font, splash,
                 width - font.width(splash) - 6, 6, 0x618CC8FF);
     }
 
-    private void drawDropZoneOverlay(GuiGraphics ctx) {
+    private void drawDropZoneOverlay(GuiGraphicsExtractor ctx) {
         ctx.fill(0, 0, width, height, 0xCC050F2A);
         int p = 18, col = 0xCC8CD2FF;
         SkyzRenderHelper.drawRoundedBorder(ctx, p,     p,     width - p * 2,     height - p * 2,     14, col);
         SkyzRenderHelper.drawRoundedBorder(ctx, p + 1, p + 1, width - p * 2 - 2, height - p * 2 - 2, 13, col);
-        ctx.drawCenteredString(font, "Drop your image here",          width / 2, height / 2 - 12, 0xFFFFFFFF);
-        ctx.drawCenteredString(font, "PNG, JPG or BMP — any size", width / 2, height / 2 + 4,  0x888CD2FF);
+        ctx.centeredText(font, "Drop your image here",          width / 2, height / 2 - 12, 0xFFFFFFFF);
+        ctx.centeredText(font, "PNG, JPG or BMP — any size", width / 2, height / 2 + 4,  0x888CD2FF);
     }
 
     // ── Mute button (drawn manually because BaseUIModelScreen does not
@@ -280,7 +283,7 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
         return dx * dx + dy * dy <= MUTE_R * MUTE_R;
     }
 
-    private void drawMuteButton(GuiGraphics ctx, int mx, int my) {
+    private void drawMuteButton(GuiGraphicsExtractor ctx, int mx, int my) {
         int cx = muteCx(), cy = muteCy();
         boolean hover = mouseInMute(mx, my);
 
@@ -293,7 +296,7 @@ public class SkyzTitleScreen extends BaseUIModelScreen<FlowLayout> {
 
         String icon = musicMuted ? "🔇" : "🔊"; // 🔇 / 🔊
         int w = font.width(icon);
-        ctx.drawString(font, icon, cx - w / 2, cy - 4, hover ? 0xFFFFFFFF : 0xCCCCEFFF, false);
+        ctx.text(font, icon, cx - w / 2, cy - 4, hover ? 0xFFFFFFFF : 0xCCCCEFFF, false);
     }
 
     // ── Input ────────────────────────────────────────────────────────────

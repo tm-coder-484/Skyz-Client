@@ -7,7 +7,7 @@ import io.wispforest.owo.ui.component.TextBoxComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.multiplayer.ServerData;
@@ -37,6 +37,9 @@ import net.skyz.client.util.SkyzTheme;
  * inputs, glass buttons.
  */
 public class SkyzAddServerScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private final Screen          parent;
     private final BooleanConsumer callback;
@@ -83,13 +86,13 @@ public class SkyzAddServerScreen extends BaseUIModelScreen<FlowLayout> {
         nameField = root.childById(TextBoxComponent.class, "tb-name");
         addrField = root.childById(TextBoxComponent.class, "tb-addr");
         if (nameField != null) {
-            nameField.setDrawsBackground(false);
+            nameField.setBordered(false);
             nameField.setMaxLength(32);
             nameField.text(server.name == null ? "" : server.name);
             nameField.onChanged().subscribe(v -> updateDoneEnabled());
         }
         if (addrField != null) {
-            addrField.setDrawsBackground(false);
+            addrField.setBordered(false);
             addrField.setMaxLength(128);
             addrField.text(server.ip == null ? "" : server.ip);
             addrField.onChanged().subscribe(v -> updateDoneEnabled());
@@ -101,9 +104,9 @@ public class SkyzAddServerScreen extends BaseUIModelScreen<FlowLayout> {
             resourcePackBtn.renderer(SkyzButtonRenderer.NAV_BACK);
             updateRpLabel();
             resourcePackBtn.onPress(b -> {
-                ServerData.ServerResourcePackPolicy[] all = ServerData.ServerResourcePackPolicy.values();
-                int next = (server.getResourcePackPolicy().ordinal() + 1) % all.length;
-                server.setResourcePackPolicy(all[next]);
+                ServerData.ServerPackStatus[] all = ServerData.ServerPackStatus.values();
+                int next = (server.getResourcePackStatus().ordinal() + 1) % all.length;
+                server.setResourcePackStatus(all[next]);
                 updateRpLabel();
             });
         }
@@ -129,19 +132,19 @@ public class SkyzAddServerScreen extends BaseUIModelScreen<FlowLayout> {
 
     private void updateRpLabel() {
         if (resourcePackBtn == null) return;
-        ServerData.ServerResourcePackPolicy p = server.getResourcePackPolicy();
+        ServerData.ServerPackStatus p = server.getResourcePackStatus();
         resourcePackBtn.setMessage(Component.literal(
-                "Resource Packs: " + p.getName().getString()));
+                "Resource Packs: " + p.name()));
     }
 
     private void updateDoneEnabled() {
         if (doneBtn == null || addrField == null) return;
-        doneBtn.active(ServerAddress.isValid(addrField.getText()));
+        doneBtn.active(ServerAddress.isValidAddress(addrField.getValue()));
     }
 
     private void addAndClose() {
-        String n = nameField == null ? "" : nameField.getText();
-        String a = addrField == null ? "" : addrField.getText();
+        String n = nameField == null ? "" : nameField.getValue();
+        String a = addrField == null ? "" : addrField.getValue();
         server.name = n.isEmpty() ? Component.translatable("selectServer.defaultName").getString() : n;
         server.ip   = a;
         callback.accept(true);
@@ -149,19 +152,19 @@ public class SkyzAddServerScreen extends BaseUIModelScreen<FlowLayout> {
 
     // ── Render ────────────────────────────────────────────────────────────
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // No-op: render() draws the gradient itself.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,            width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,   width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3, width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 
-    @Override public boolean shouldPause() { return false; }
+    @Override public boolean isPauseScreen() { return false; }
 
     @Override
     public void onClose() {

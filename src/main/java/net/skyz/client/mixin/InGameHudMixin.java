@@ -3,7 +3,7 @@ package net.skyz.client.mixin;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.skyz.client.render.SkyzHudRenderer;
 import net.skyz.client.util.SkyzClientState;
 import net.skyz.client.util.SkyzHudState;
@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <p>Targets {@link Gui} — the 26.1 Mojang name for what used to be
  * {@code InGameHud}. The render signature is
- * {@code render(GuiGraphics, DeltaTracker)}.
+ * {@code render(GuiGraphicsExtractor, DeltaTracker)}.
  */
 @Mixin(Gui.class)
 public class InGameHudMixin {
@@ -46,8 +46,8 @@ public class InGameHudMixin {
     /** Wallclock at which this play session started. Read by Session Timer. */
     private static long sessionStart = 0;
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void skyz$render(GuiGraphics ctx, DeltaTracker tick, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void skyz$render(GuiGraphicsExtractor ctx, DeltaTracker tick, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null) return;
 
@@ -78,17 +78,8 @@ public class InGameHudMixin {
                 .getItemBySlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND);
         if (offhand.is(net.minecraft.world.item.Items.TOTEM_OF_UNDYING)) return;
 
-        net.minecraft.world.entity.player.Inventory inv = client.player.getInventory();
-        for (int i = 0; i < inv.getContainerSize(); i++) {
-            if (inv.getItem(i).is(net.minecraft.world.item.Items.TOTEM_OF_UNDYING)) {
-                client.gameMode.handleInventoryMouseClick(
-                        client.player.containerMenu.containerId,
-                        40,                                                      // offhand slot in the player inventory screen
-                        i < 9 ? i : i,                                           // hotbar button index
-                        net.minecraft.world.inventory.ClickType.SWAP,
-                        client.player);
-                break;
-            }
-        }
+        // TODO[PORT-26.1]: MultiPlayerGameMode.handleInventoryMouseClick + ClickType.SWAP were
+        // removed in 26.1 (replaced by handleContainerInput(..., ContainerInput, ...)). Auto-totem
+        // offhand-swap is disabled until ported to the new container-input API.
     }
 }

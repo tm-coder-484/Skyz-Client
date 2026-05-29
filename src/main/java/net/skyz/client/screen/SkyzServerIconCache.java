@@ -3,7 +3,7 @@ package net.skyz.client.screen;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.client.renderer.texture.ServerIconTexture;
+import net.minecraft.client.gui.screens.FaviconTexture;
 import net.skyz.client.SkyzClientMod;
 
 import java.io.ByteArrayInputStream;
@@ -26,25 +26,25 @@ import java.util.Map;
  */
 public final class SkyzServerIconCache {
 
-    // TODO(port-26.1): Verify exact Mojang names for ServerIconTexture
+    // TODO(port-26.1): Verify exact Mojang names for FaviconTexture
     // (forServer / upload / clearIcon) and ServerData (ip / getIconBytes)
     // against mcsrc.dev once available. The names below match the post-1.21
     // Mojang convention (renamed from yarn WorldIcon / ServerInfo).
     private SkyzServerIconCache() {}
 
-    private static final Map<String, ServerIconTexture> ICONS = new HashMap<>();
+    private static final Map<String, FaviconTexture> ICONS = new HashMap<>();
     private static final Map<String, byte[]>    BYTES = new HashMap<>();
 
     /**
-     * Returns a {@link ServerIconTexture} for the given server, creating one on
+     * Returns a {@link FaviconTexture} for the given server, creating one on
      * first request and re-uploading the texture only when the favicon
-     * bytes have changed. {@code ServerIconTexture.getTextureLocation()} falls
+     * bytes have changed. {@code FaviconTexture.getTextureLocation()} falls
      * back to vanilla's {@code unknown_server.png} when no favicon has been
      * loaded — caller can use the returned icon's id unconditionally.
      */
-    public static ServerIconTexture getOrUpload(ServerData info) {
-        ServerIconTexture icon = ICONS.computeIfAbsent(info.ip,
-                addr -> ServerIconTexture.forServer(
+    public static FaviconTexture getOrUpload(ServerData info) {
+        FaviconTexture icon = ICONS.computeIfAbsent(info.ip,
+                addr -> FaviconTexture.forServer(
                         Minecraft.getInstance().getTextureManager(), addr));
 
         byte[] current = info.getIconBytes();
@@ -52,7 +52,7 @@ public final class SkyzServerIconCache {
         if (Arrays.equals(current, cached)) return icon;
 
         if (current == null) {
-            try { icon.clearIcon(); } catch (Exception ignored) {}
+            try { icon.clear(); } catch (Exception ignored) {}
         } else {
             try {
                 NativeImage image = NativeImage.read(new ByteArrayInputStream(current));
@@ -72,7 +72,7 @@ public final class SkyzServerIconCache {
      * from the list so we don't leak the texture.
      */
     public static void invalidate(String address) {
-        ServerIconTexture icon = ICONS.remove(address);
+        FaviconTexture icon = ICONS.remove(address);
         BYTES.remove(address);
         if (icon != null) {
             try { icon.close(); } catch (Exception ignored) {}

@@ -1,7 +1,7 @@
 package net.skyz.client.util;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * A slide-down toast notification matching the HTML .toast element.
@@ -24,7 +24,7 @@ public class Toast {
     }
 
     /** Called every render frame. {@code delta} is fractional ticks. */
-    public void render(GuiGraphics ctx, int screenW, float delta) {
+    public void render(GuiGraphicsExtractor ctx, int screenW, float delta) {
         if (!visible && anim <= 0f) return;
 
         // Drive timer
@@ -58,7 +58,7 @@ public class Toast {
         SkyzRenderHelper.fillCircle(ctx, bx + 10, by + boxH/2 - 1, 1, 0xCCFFFFFF);
 
         // Text centred
-        ctx.drawCenteredString(tr, message,
+        ctx.centeredText(tr, message,
                 screenW / 2, by + padH, SkyzColors.TEXT_PRIMARY);
     }
 }

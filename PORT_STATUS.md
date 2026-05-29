@@ -1,6 +1,13 @@
 # Skyz Client — 1.21.11 → 26.1.2 Port Status
 
-**State:** Non-render layer 100% ported and compiling. Render layer scoped + recipe proven (`SkyzRenderHelper` done). Render rewrite of screens/HUD remains.
+**State:** ✅ **BUILD SUCCESSFUL — port complete & fully green** (`build/libs/skyz-client-5.0.0.jar`). `compileJava` 0 errors, `gradlew build` passes. Render layer + all non-render API migrations done.
+
+**Stubbed (3 features, documented TODO[PORT-26.1]) — degraded but mod loads & rest works:**
+1. **ESP world-render draw** — `fabric-rendering-v1` (`WorldRenderEvents`) not shipped for 26.1. Detection thread still runs; only the 3-D box drawing is dormant.
+2. **Kitchen-sink dev keybind (K)** — `fabric keybinding.v1` module not shipped + `KeyMapping.CATEGORY_MISC` removed. Dev-only screen; key unregistered (consumeClick loop guards null).
+3. **Auto-totem offhand swap** — `MultiPlayerGameMode.handleInventoryMouseClick` + `ClickType.SWAP` removed (now `handleContainerInput(...ContainerInput...)`). Disabled until ported.
+
+Re-enable each when the upstream Fabric module ships / the ContainerInput port is done — all marked `TODO[PORT-26.1]` in source.
 
 ## Environment (one-time, already configured)
 - **JDK 25** extracted to `C:\jdks\jdk25\jdk-25.0.3+9` (Foojay auto-download fails on this box — its tmp→jdks move errors). `gradle.properties` points at it via `org.gradle.java.installations.paths` + `auto-download=false`.
@@ -58,3 +65,55 @@ owo `Surface.draw(OwoUIGraphics, ParentUIComponent)`. The inline lambdas `(ctx, 
 
 ## Verify loop
 `.\gradlew.bat compileJava --no-daemon 2>&1 | Out-File build-errors.txt -Encoding utf8` then grep `error:` / `symbol:` in `build-errors.txt`. Compiler caps at 100 errors — fix in batches and re-run.
+
+---
+
+# UPDATE (post render-transform) — true remaining scope
+
+**Render transform DONE & correct** (commit pending): all 14 screens + Toast + SkyzHudRenderer +
+both HUD mixins converted to `extractRenderState`/`extractBackground`/`GuiGraphicsExtractor`; text via
+base `ctx.text()`/`ctx.centeredText()`; HUD mixin targets `Gui.extractRenderState`; overlay mixin targets
+`Gui.extractTextureOverlay`. Added a `client` alias field (`= Minecraft.getInstance()`) to all 19 screens
+(26.1 renamed the inherited `Screen.client` field to `minecraft`).
+
+**KEY LESSON:** the prior "non-render layer compiles, only ~100 GuiGraphics errors left" was a **javac
+100-error-cap illusion** — GuiGraphics errors filled the cap and hid ~96 real non-render API errors.
+After the render transform + client-alias, the build now reports **96 uncapped errors** across these
+subsystems (fix in this order; each is independent):
+
+1. **Render stragglers (~15)** — `util/SkyzButton.java` & `util/SkyzCircleButton.java`: their widget base's
+   abstract render method + `mouseClicked` signature changed (now `extract`-based / `MouseButtonEvent`);
+   `SkyzButton` calls `ctx.drawTexturedQuad(Identifier,…)` which is gone → use `ctx.blit(...)`. A few
+   screens still report `method does not override` on `extractRenderState`/`extractBackground` (they extend
+   vanilla `Screen` not `BaseUIModelScreen`, or have a stray `renderBackground(...)` call — e.g.
+   `SkyzDeathScreen`). Check each against the `Screen`/widget base sigs via javap.
+2. **Fabric keybindings (~3)** — `net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper` + module
+   ABSENT in Fabric API 0.145.4+26.1.2 (same situation as the rendering module). `KeyMapping.CATEGORY_MISC`
+   also gone (category system changed). Register the K keybind via the available API or stub it (it's only
+   the dev kitchen-sink key) until the module ships. `SkyzClientMod.java`.
+3. **HUD/ESP world data (~10)** — `SkyzHudRenderer.java` + `SkyzClientState` ESP scan:
+   `ClientLevel/LevelChunk.getMinBuildHeight()` → likely `getMinY()` (verify via javap on `LevelHeightAccessor`);
+   `ChunkPos.x/.z` now private → getter is `getX()`/`getZ()`? (verify); `ResourceKey<Biome>.location()`
+   → the key→Identifier accessor changed; `LocalPlayer.displayClientMessage(Component,boolean)` moved/renamed;
+   `RenderType.guiTextured()` invalid → use the new gui render pipeline / `ctx.blit`.
+4. **Server list (~25) — biggest, needs research + likely stubbing** — `ServerIconTexture` REMOVED from
+   `net.minecraft.client.renderer.texture` (`SkyzServerIconCache.java`, `SkyzMultiplayerScreen.java`);
+   `ServerStatusPinger.pingPending()` & `.add(ServerData, Runnable)` redesigned; `ServerData.playerCount`
+   field + `getResourcePackPolicy()`/`ServerResourcePackPolicy` changed; `ConnectScreen.connect(...)` sig
+   changed. Decide: port to the new server-icon/ping API or stub icons+live-ping and keep join working.
+5. **owo TextBoxComponent (~7)** — `setDrawsBackground(boolean)` & `getText()` gone in owo 0.13.0+26.1.
+   Inspect the owo jar for the new accessors (likely `text()` getter, and background via a property/surface).
+   `SkyzAddServerScreen`, `SkyzModsScreen`, `SkyzMultiplayerScreen`, `SkyzSingleplayerScreen`.
+6. **Options sub-screens (~9)** — `ControlsScreen`/`net.minecraft.client.gui.screens.controls` relocated;
+   `TelemetryInfoScreen`, `CreditsAndAttributionScreen` moved/renamed; `OptionsScreen(Screen, Options)` &
+   `VideoSettingsScreen(...)` ctor signatures changed. `SkyzOptionsScreen`, `SkyzPauseMenuScreen`.
+7. **Misc (~6)** — `net.minecraft.Util` EXISTS in the jar (`javap net.minecraft.Util` works) yet import
+   fails → check the actual import line in `SkyzPauseMenuScreen`/`SkyzSkinEditorScreen` (likely a stray/wrong
+   import to fix); `ClickType` in `net.minecraft.world.inventory` (autoTotem in `InGameHudMixin`) — verify new
+   location; `InventoryScreen` helper method (`SkyzSkinEditorScreen`).
+
+**Pinned 26.1 signatures already verified (reuse, don't re-derive):** Screen field is `minecraft`;
+`Screen.extractRenderState/extractBackground(GuiGraphicsExtractor,int,int,float)`;
+`Gui.extractRenderState(GuiGraphicsExtractor,DeltaTracker)`; `Gui.extractTextureOverlay(GuiGraphicsExtractor,Identifier,float)`;
+`GuiGraphicsExtractor.text/centeredText/item/fill/fillGradient/blit/guiWidth/guiHeight`;
+`MouseButtonEvent.x()/.y()` return double; `OwoUIGraphics.TextAnchor` has only TOP/BOTTOM_LEFT/RIGHT (no CENTER).

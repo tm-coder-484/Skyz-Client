@@ -5,9 +5,9 @@ import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
 import net.minecraft.SharedConstants;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.ShareToLanScreen;
@@ -50,6 +50,9 @@ import net.skyz.client.util.SkyzTheme;
  * </ul>
  */
 public class SkyzPauseMenuScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     /** Vanilla PauseScreen's `showPauseMenu` field — we pass it through verbatim. */
     public final boolean showMenu;
@@ -153,7 +156,7 @@ public class SkyzPauseMenuScreen extends BaseUIModelScreen<FlowLayout> {
 
     private void openOptions() {
         Minecraft mc = Minecraft.getInstance();
-        mc.setScreen(new OptionsScreen(this, mc.options));
+        mc.setScreen(new OptionsScreen(this, mc.options, false));
     }
 
     private void openLan() {
@@ -198,26 +201,26 @@ public class SkyzPauseMenuScreen extends BaseUIModelScreen<FlowLayout> {
 
     // ─── Lifecycle / render ──────────────────────────────────────────────
     /**
-     * Vanilla's PauseScreen.shouldPause() returns true (the game
+     * Vanilla's PauseScreen.isPauseScreen() returns true (the game
      * pauses while the menu is open in singleplayer). Match it so
      * gameplay actually pauses while we're on screen.
      */
-    @Override public boolean shouldPause() { return true; }
+    @Override public boolean isPauseScreen() { return true; }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // Vanilla blurs/dims the world behind the menu; we do a soft
         // dim + Skyz tint over whatever is behind.
         ctx.fillGradient(0, 0, width, height, 0xCC050F2A, 0xCC0A1F50);
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         if (!showMenu) return;
         // Soft Skyz-tinted veil over whatever was behind (paused world).
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,
                 width, height, SkyzTheme.BG1 & 0x00FFFFFF | 0xC0000000,
                 SkyzTheme.BG3 & 0x00FFFFFF | 0xC0000000);
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 }

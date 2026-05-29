@@ -15,7 +15,7 @@ import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.worldselection.EditWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.network.chat.Component;
@@ -48,6 +48,9 @@ import java.util.List;
  * and injected into the {@code world-list} flow.
  */
 public class SkyzSingleplayerScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private final SkyzTitleScreen parent;
     private final Minecraft mc;
@@ -116,7 +119,7 @@ public class SkyzSingleplayerScreen extends BaseUIModelScreen<FlowLayout> {
         // Search box.
         searchBox = root.childById(TextBoxComponent.class, "tb-search");
         if (searchBox != null) {
-            searchBox.setDrawsBackground(false);
+            searchBox.setBordered(false);
             searchBox.onChanged().subscribe(value -> {
                 searchQuery = value;
                 rebuildList();
@@ -369,22 +372,22 @@ public class SkyzSingleplayerScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     // ─── Render (gradient bg + delete confirm overlay) ───────────────────
-    @Override public boolean shouldPause() { return false; }
+    @Override public boolean isPauseScreen() { return false; }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // Painted by render(), so no-op here.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // 1) Gradient background.
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,             width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,    width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3,  width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
 
         // 2) Owo (nav, action, toolbar, world list).
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         // 3) Delete-confirmation overlay (modal — eats clicks/keys).
         if (deletePending != null) drawDeleteOverlay(ctx, mouseX, mouseY);
@@ -393,19 +396,19 @@ public class SkyzSingleplayerScreen extends BaseUIModelScreen<FlowLayout> {
         if (parent != null) parent.toast.render(ctx, width, delta);
     }
 
-    private void drawDeleteOverlay(GuiGraphics ctx, int mx, int my) {
+    private void drawDeleteOverlay(GuiGraphicsExtractor ctx, int mx, int my) {
         ctx.fill(0, 0, width, height, 0xCC050F2A);
 
         int bw = 360, bh = 130, bx = (width - bw) / 2, by = (height - bh) / 2;
         SkyzRenderHelper.fillRoundedRect(ctx, bx, by, bw, bh, 12, 0xEE071830);
         SkyzRenderHelper.drawRoundedBorder(ctx, bx, by, bw, bh, 12, 0xAAFF6666);
 
-        ctx.drawCenteredString(font, "Delete world?",
+        ctx.centeredText(font, "Delete world?",
                 width / 2, by + 14, 0xFFFFAAAA);
-        ctx.drawCenteredString(font,
+        ctx.centeredText(font,
                 "\"" + deletePending.getLevelName() + "\" will be permanently deleted.",
                 width / 2, by + 34, SkyzColors.TEXT_PRIMARY);
-        ctx.drawCenteredString(font,
+        ctx.centeredText(font,
                 "This cannot be undone.",
                 width / 2, by + 48, SkyzColors.TEXT_MUTED);
 
@@ -424,9 +427,9 @@ public class SkyzSingleplayerScreen extends BaseUIModelScreen<FlowLayout> {
         SkyzRenderHelper.drawRoundedBorder(ctx, bx + bw - 174, btnY, 160, 22, 8,
                 caHov ? 0x998CDCFF : 0x4D8CDCFF);
 
-        ctx.drawCenteredString(font, "Delete forever",
+        ctx.centeredText(font, "Delete forever",
                 bx + 94, btnY + 7, delHov ? 0xFFFFFFFF : 0xCCFFAAAA);
-        ctx.drawCenteredString(font, "Cancel",
+        ctx.centeredText(font, "Cancel",
                 bx + bw - 94, btnY + 7, caHov ? 0xFFFFFFFF : SkyzColors.TEXT_MUTED);
     }
 

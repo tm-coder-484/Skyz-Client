@@ -3,7 +3,7 @@ package net.skyz.client.screen;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -25,6 +25,9 @@ import net.skyz.client.util.SkyzTheme;
  * its title / task / progress every frame to keep the UI fresh.
  */
 public class SkyzProgressScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private final ProgressScreen source;
     private final Accessor accessor;
@@ -63,18 +66,18 @@ public class SkyzProgressScreen extends BaseUIModelScreen<FlowLayout> {
         barPlaceholder = root.childById(FlowLayout.class, "bar-placeholder");
     }
 
-    @Override public boolean shouldPause()      { return false; }
+    @Override public boolean isPauseScreen()      { return false; }
     @Override public boolean shouldCloseOnEsc() { return false; }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,             width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,    width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3,  width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // Pull fresh values from the source screen — they change as the
         // operation progresses (e.g. "Saving level..." → "Saving chunks...").
         Component title = accessor.title();
@@ -85,7 +88,7 @@ public class SkyzProgressScreen extends BaseUIModelScreen<FlowLayout> {
         if (taskLbl  != null && task  != null)  taskLbl.text(task);
         if (pctLbl   != null) pctLbl.text(Component.literal(Math.max(0, Math.min(100, pct)) + "%"));
 
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         // Draw the actual progress bar over the placeholder. Reading the
         // placeholder's bounds after super.render gives us laid-out coords.

@@ -50,7 +50,7 @@ public class AutoReconnectManager {
             // TODO(port): verify ConnectScreen.connect(...) signature for 26.1.2 —
             // historical signature: (Screen parent, Minecraft client, ServerAddress addr,
             // ServerData data, boolean quickPlay, TransferState transferState)
-            ConnectScreen.connect(new TitleScreen(), client,
+            ConnectScreen.startConnecting(new TitleScreen(), client,
                     ServerAddress.parseString(lastServerInfo.ip), lastServerInfo, false, null);
         }
     }

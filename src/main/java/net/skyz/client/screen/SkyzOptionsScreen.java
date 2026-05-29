@@ -13,17 +13,17 @@ import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.achievement.StatsScreen;
-import net.minecraft.client.gui.screens.controls.ControlsScreen;
+import net.minecraft.client.gui.screens.options.controls.ControlsScreen;
 import net.minecraft.client.gui.screens.options.AccessibilityOptionsScreen;
 import net.minecraft.client.gui.screens.options.ChatOptionsScreen;
-import net.minecraft.client.gui.screens.options.CreditsAndAttributionScreen;
+import net.minecraft.client.gui.screens.CreditsAndAttributionScreen;
 import net.minecraft.client.gui.screens.options.LanguageSelectScreen;
 import net.minecraft.client.gui.screens.options.SkinCustomizationScreen;
 import net.minecraft.client.gui.screens.options.SoundOptionsScreen;
-import net.minecraft.client.gui.screens.options.TelemetryInfoScreen;
+import net.minecraft.client.gui.screens.telemetry.TelemetryInfoScreen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
 import net.minecraft.network.chat.Component;
@@ -51,6 +51,9 @@ import java.util.function.Function;
  * from both.
  */
 public class SkyzOptionsScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     /**
      * Sodium presence check. When Sodium is installed the Video button
@@ -271,7 +274,7 @@ public class SkyzOptionsScreen extends BaseUIModelScreen<FlowLayout> {
                             + "— falling back to vanilla Video Settings. Check that your Sodium "
                             + "version exposes SodiumOptionsGUI(Screen) or a ModMenu factory.");
         }
-        open(p -> new VideoSettingsScreen(p, options));
+        open(p -> new VideoSettingsScreen(p, Minecraft.getInstance(), options));
     }
 
     /**
@@ -562,15 +565,15 @@ public class SkyzOptionsScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // No-op: render() handles bg.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,             width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,    width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3,  width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 }

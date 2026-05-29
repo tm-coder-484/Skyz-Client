@@ -5,7 +5,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 // TODO[PORT-26.1]: re-add `import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;`
@@ -31,7 +30,7 @@ public class SkyzClientMod implements ClientModInitializer {
      * a version bump here propagates everywhere without grepping for
      * hardcoded version literals.
      */
-    public static final String MOD_VERSION = "4.3.1";
+    public static final String MOD_VERSION = "5.0.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /** Set true before ConnectScreen.connect() so TitleScreenMixin re-opens multiplayer after disconnect. */
@@ -51,7 +50,7 @@ public class SkyzClientMod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        LOGGER.info("[Skyz Client] Initialising v{} for Minecraft 1.21.11", MOD_VERSION);
+        LOGGER.info("[Skyz Client] Initialising v{} for Minecraft 26.1.2", MOD_VERSION);
 
         // Load saved HUD layout and settings
         net.skyz.client.util.SkyzHudState.initDefaults(854, 480);
@@ -73,11 +72,11 @@ public class SkyzClientMod implements ClientModInitializer {
         // Register the kitchen-sink dev keybind (default: K). KeyBinding
         // categories are first-class records in 1.21.11; MISC lumps Skyz
         // dev keys with other miscellaneous bindings in the controls UI.
-        KITCHEN_SINK_KEY = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.skyz_client.kitchen_sink",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_K,
-                KeyMapping.CATEGORY_MISC));
+        // TODO[PORT-26.1]: Fabric keybinding module (keybinding.v1.KeyBindingHelper) is not
+        // shipped in Fabric API 0.145.4+26.1.2 yet, and KeyMapping.CATEGORY_MISC was removed
+        // (categories are now KeyMapping.Category objects). The kitchen-sink dev key is left
+        // unregistered until the module lands; the consumeClick loop below guards on null.
+        KITCHEN_SINK_KEY = null;
 
         // Store server info on join so AutoReconnectManager can reconnect after kicks.
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {

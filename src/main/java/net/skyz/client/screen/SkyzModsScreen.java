@@ -17,7 +17,7 @@ import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -48,6 +48,9 @@ import java.util.Set;
  * mods) and rebuilds are cheap.
  */
 public class SkyzModsScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private static final boolean HAS_MODMENU = FabricLoader.getInstance().isModLoaded("modmenu");
 
@@ -181,7 +184,7 @@ public class SkyzModsScreen extends BaseUIModelScreen<FlowLayout> {
 
         searchBox = root.childById(TextBoxComponent.class, "tb-search");
         if (searchBox != null) {
-            searchBox.setDrawsBackground(false);
+            searchBox.setBordered(false);
             searchBox.onChanged().subscribe(v -> {
                 searchQuery = v;
                 rebuildModsList();
@@ -447,16 +450,16 @@ public class SkyzModsScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // No-op; render() handles the gradient.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,            width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,   width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3, width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
         if (parent != null) parent.toast.render(ctx, width, delta);
     }
 }

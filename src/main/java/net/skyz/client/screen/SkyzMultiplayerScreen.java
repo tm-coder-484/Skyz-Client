@@ -15,14 +15,14 @@ import io.wispforest.owo.ui.core.Insets;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.ServerList;
 import net.minecraft.client.multiplayer.ServerStatusPinger;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
-import net.minecraft.client.renderer.texture.ServerIconTexture;
+import net.minecraft.client.gui.screens.FaviconTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.skyz.client.SkyzClientMod;
@@ -46,11 +46,14 @@ import java.util.List;
  * cheap, and this keeps card state in sync without per-card label tracking.
  *
  * Direct Connect intentionally stays as a Java-rendered overlay drawn after
- * super.render() — the modal needs single-field text input with submit-on-Enter
+ * super.extractRenderState() — the modal needs single-field text input with submit-on-Enter
  * which is easier to implement with the existing screen-level char/key hooks
  * than by spinning up a second owo screen.
  */
 public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private static final int REBUILD_TICKS = 30;   // ≈1.5 s
 
@@ -114,7 +117,7 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
 
         // Buttons.
         wire(root, "btn-back", () -> {
-            pinger.pingPending();
+            pinger.removeAll();
             client.setScreen(parent);
         }, SkyzButtonRenderer.NAV_BACK);
 
@@ -126,7 +129,7 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
         }, SkyzButtonRenderer.DEFAULT);
 
         wire(root, "btn-refresh", () -> {
-            pinger.pingPending();
+            pinger.removeAll();
             // Reset each ServerData's status so the card UI re-shows pending pings.
             for (int i = 0; i < serverList.size(); i++) {
                 serverList.get(i).ping = -1L;
@@ -151,7 +154,7 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
         if (searchBox != null) {
             // Disable the vanilla black-rectangle backdrop so our pill surface
             // shows through.
-            searchBox.setDrawsBackground(false);
+            searchBox.setBordered(false);
             searchBox.onChanged().subscribe(value -> {
                 searchQuery = value;
                 rebuildServerList();
@@ -257,9 +260,9 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
 
         // Server favicon — ServerIconTexture.getTextureLocation() falls back to
         // vanilla's "unknown_server.png" when no favicon has been loaded.
-        ServerIconTexture iconTex = SkyzServerIconCache.getOrUpload(info);
+        FaviconTexture iconTex = SkyzServerIconCache.getOrUpload(info);
         TextureComponent iconComp = UIComponents.texture(
-                iconTex.getTextureLocation(), 0, 0, 64, 64, 64, 64);
+                iconTex.textureLocation(), 0, 0, 64, 64, 64, 64);
         iconComp.horizontalSizing(Sizing.fixed(36));
         iconComp.verticalSizing(Sizing.fixed(36));
         iconComp.margins(Insets.right(2));
@@ -301,9 +304,9 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
                 .label(Component.literal(pingStr))
                 .color(io.wispforest.owo.ui.core.Color.ofArgb(pingCol)));
 
-        if (info.playerCount != null && !info.playerCount.getString().isEmpty()) {
+        if (info.players != null) {
             ping_col.child(UIComponents
-                    .label(Component.literal(info.playerCount.getString()))
+                    .label(Component.literal(info.players.online() + "/" + info.players.max()))
                     .color(io.wispforest.owo.ui.core.Color.ofArgb(0xFF4D8CD2)));
         }
         card.child(ping_col);
@@ -410,7 +413,8 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
             Thread t = new Thread(() -> {
                 try {
                     ServerAddress.parseString(info.ip);  // validate
-                    pinger.add(info, () -> serverList.save());
+                    pinger.pingServer(info, () -> serverList.save(), () -> {},
+                            net.minecraft.server.network.EventLoopGroupHolder.remote(false));
                 } catch (Exception ignored) {}
             }, "skyz-ping-" + info.ip);
             t.setDaemon(true);
@@ -419,7 +423,7 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     private void doConnect(ServerData info) {
-        pinger.pingPending();
+        pinger.removeAll();
         ConnectScreen.startConnecting(this, mc, ServerAddress.parseString(info.ip), info, false, null);
     }
 
@@ -466,32 +470,32 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
 
     @Override
     public void onClose() {
-        pinger.pingPending();
+        pinger.removeAll();
         if (client != null) client.setScreen(parent);
     }
 
     @Override
     public void removed() {
-        pinger.pingPending();
+        pinger.removeAll();
         // Favicons stay resident in SkyzServerIconCache for the life of
         // the JVM — no per-screen cleanup.
     }
 
     // ── Render ───────────────────────────────────────────────────────────
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // No-op: render() handles the gradient background.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // 1) Gradient background — same scheme as the title screen.
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,            width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,   width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3, width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
 
         // 2) Owo UI (nav, action row, toolbar, server list).
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         // 3) Direct Connect modal overlay (custom Java render — see header).
         if (connectingDirect) drawDirectConnectOverlay(ctx, mouseX, mouseY);
@@ -500,23 +504,23 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
         if (toastParent != null) toastParent.toast.render(ctx, width, delta);
     }
 
-    private void drawDirectConnectOverlay(GuiGraphics ctx, int mx, int my) {
+    private void drawDirectConnectOverlay(GuiGraphicsExtractor ctx, int mx, int my) {
         ctx.fill(0, 0, width, height, 0xCC050F2A);
 
         int bw = 320, bh = 110, bx = (width - bw) / 2, by = (height - bh) / 2;
         SkyzRenderHelper.fillRoundedRect(ctx, bx, by, bw, bh, 12, 0xEE071830);
         SkyzRenderHelper.drawRoundedBorder(ctx, bx, by, bw, bh, 12, 0x778CD2FF);
 
-        ctx.drawCenteredString(font, "Direct Connect",
+        ctx.centeredText(font, "Direct Connect",
                 width / 2, by + 14, 0xFFF0F8FF);
-        ctx.drawString(font, "Server address:",
+        ctx.text(font, "Server address:",
                 bx + 14, by + 30, SkyzColors.TEXT_MUTED);
 
         // Input pill.
         SkyzRenderHelper.fillRoundedRect(ctx, bx + 14, by + 42, bw - 28, 22, 6, 0x55091E46);
         SkyzRenderHelper.drawRoundedBorder(ctx, bx + 14, by + 42, bw - 28, 22, 6, 0x558CD2FF);
         String addr = directAddr.isEmpty() ? "play.example.com" : directAddr + "▍";
-        ctx.drawString(font, addr, bx + 20, by + 49,
+        ctx.text(font, addr, bx + 20, by + 49,
                 directAddr.isEmpty() ? 0x388CD2FF : SkyzColors.TEXT_PRIMARY);
 
         // Buttons.
@@ -534,18 +538,18 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
         SkyzRenderHelper.drawRoundedBorder(ctx, bx + bw - 144, btnY, 130, 22, 8,
                 caHov ? 0x998CDCFF : 0x4D8CDCFF);
 
-        ctx.drawCenteredString(font, "Connect",
+        ctx.centeredText(font, "Connect",
                 bx + 79, btnY + 7, cnHov ? 0xFFFFFFFF : 0xCCDDFFFF);
-        ctx.drawCenteredString(font, "Cancel",
+        ctx.centeredText(font, "Cancel",
                 bx + bw - 79, btnY + 7, caHov ? 0xFFFFFFFF : SkyzColors.TEXT_MUTED);
     }
 
     // ── Input ────────────────────────────────────────────────────────────
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent click, boolean doubled) {
         // When the modal is open, intercept clicks for its buttons before owo.
         if (connectingDirect) {
-            double mx = mouseX, my = mouseY;
+            double mx = click.x(), my = click.y();
             int bw = 320, bh = 110, bx = (width - bw) / 2, by = (height - bh) / 2;
             int btnY = by + bh - 30;
             if (mx >= bx + 14 && mx <= bx + 144 && my >= btnY && my <= btnY + 22) {
@@ -560,21 +564,21 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
             }
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(click, doubled);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
         if (connectingDirect) {
-            directAddr += chr;
+            directAddr += event.codepointAsString();
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        int key = keyCode;
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int key = event.key();
         if (connectingDirect) {
             if (key == 259 /* BACKSPACE */) {
                 if (!directAddr.isEmpty())
@@ -590,6 +594,6 @@ public class SkyzMultiplayerScreen extends BaseUIModelScreen<FlowLayout> {
             }
             return true;  // swallow other keys while modal is open
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 }

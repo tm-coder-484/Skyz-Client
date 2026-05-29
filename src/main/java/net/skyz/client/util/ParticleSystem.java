@@ -1,6 +1,6 @@
 package net.skyz.client.util;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.Random;
 
@@ -72,7 +72,7 @@ public class ParticleSystem {
         tint[i]    = PALETTE[RNG.nextInt(PALETTE.length)];
     }
 
-    public void tick(GuiGraphics ctx, float delta) {
+    public void tick(GuiGraphicsExtractor ctx, float delta) {
         if (!enabled || screenW == 0) return;
 
         for (int i = 0; i < COUNT; i++) {
@@ -107,7 +107,7 @@ public class ParticleSystem {
      * single bright centre pixel. Pixelated by nature, but multiple alpha
      * layers make the edge look softly blended at MC scale.
      */
-    private void drawSoftMote(GuiGraphics ctx, int px, int py,
+    private void drawSoftMote(GuiGraphicsExtractor ctx, int px, int py,
                               float radius, float alphaScale, int rgb) {
         float a = Math.max(0f, Math.min(1f, alphaScale));
 
@@ -134,7 +134,7 @@ public class ParticleSystem {
      * Twinkling shimmer particle — same soft halo as the regular mote PLUS a
      * cross pattern of bright pixels for the sparkle effect.
      */
-    private void drawShimmer(GuiGraphics ctx, int px, int py,
+    private void drawShimmer(GuiGraphicsExtractor ctx, int px, int py,
                              float alphaScale, int rgb) {
         float a = Math.max(0f, Math.min(1f, alphaScale));
 

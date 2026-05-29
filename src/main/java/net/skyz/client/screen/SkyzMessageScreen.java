@@ -3,7 +3,7 @@ package net.skyz.client.screen;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.skyz.client.util.SkyzRenderHelper;
@@ -22,6 +22,9 @@ import net.skyz.client.util.SkyzTheme;
  * pressing Escape during a save doesn't bypass the operation.
  */
 public class SkyzMessageScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private final Component message;
     private long startMs = 0;
@@ -40,11 +43,11 @@ public class SkyzMessageScreen extends BaseUIModelScreen<FlowLayout> {
         if (msg != null) msg.text(message);
     }
 
-    @Override public boolean shouldPause()      { return false; }
+    @Override public boolean isPauseScreen()      { return false; }
     @Override public boolean shouldCloseOnEsc() { return false; }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // Gradient veil — matches the rest of the Skyz screens.
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,             width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,    width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
@@ -52,9 +55,9 @@ public class SkyzMessageScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         if (startMs == 0) startMs = System.currentTimeMillis();
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         // Three-dot pulse below the message — quick visual cue that the
         // game is alive and working. Phased over 1500 ms.

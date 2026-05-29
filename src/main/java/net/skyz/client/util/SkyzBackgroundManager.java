@@ -2,7 +2,7 @@ package net.skyz.client.util;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
 import net.skyz.client.SkyzClientMod;
@@ -79,19 +79,19 @@ public class SkyzBackgroundManager {
      * Uses drawTexturedQuad(Identifier, x1, y1, x2, y2, u1, u2, v1, v2)
      * which is the public overload with no RenderPipeline in 1.21.11.
      */
-    public boolean draw(GuiGraphics ctx, int screenW, int screenH) {
+    public boolean draw(GuiGraphicsExtractor ctx, int screenW, int screenH) {
         if (!hasTexture || registeredId == null) return false;
-        // TODO(port): verify GuiGraphics texture-blit signature in 26.1.2.
+        // TODO(port): verify GuiGraphicsExtractor texture-blit signature in 26.1.2.
         // In Mojang mappings the equivalent of yarn's drawTexturedQuad is `blit`
         // with an overload that includes a RenderType/RenderPipeline argument; the
         // older 4-arg/uv overload may be gone. Likely:
         //   ctx.blit(RenderType.guiTextured(), registeredId, 0, 0, 0f, 0f, screenW, screenH, screenW, screenH);
         // Falling back to drawTexturedQuad name for now — likely a compile error.
-        ctx.drawTexturedQuad(registeredId, 0, 0, screenW, screenH, 0f, 1f, 0f, 1f);
+        ctx.blit(registeredId, 0, 0, screenW, screenH, 0f, 1f, 0f, 1f);
         return true;
     }
 
-    public void drawDim(GuiGraphics ctx, int screenW, int screenH) {
+    public void drawDim(GuiGraphicsExtractor ctx, int screenW, int screenH) {
         ctx.fill(0, 0, screenW, screenH, 0xBB050F2A);
     }
 

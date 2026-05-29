@@ -11,9 +11,9 @@ import io.wispforest.owo.ui.core.HorizontalAlignment;
 import io.wispforest.owo.ui.core.Insets;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.VerticalAlignment;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -39,6 +39,9 @@ import java.util.function.Consumer;
  * opens the user's browser to their profile page.
  */
 public class SkyzSkinEditorScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private final SkyzTitleScreen parent;
 
@@ -216,25 +219,25 @@ public class SkyzSkinEditorScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     // ─── Lifecycle / render ──────────────────────────────────────────────
-    @Override public boolean shouldPause() { return false; }
+    @Override public boolean isPauseScreen() { return false; }
 
     @Override
     public void onClose() { if (client != null) client.setScreen(parent); }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // No-op — render() handles the gradient.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // 1) Skyz gradient backdrop.
         SkyzRenderHelper.fillGradientV(ctx, 0, 0,             width, height / 3, SkyzTheme.BG1, SkyzTheme.BG2);
         SkyzRenderHelper.fillGradientV(ctx, 0, height / 3,    width, height / 3, SkyzTheme.BG2, SkyzTheme.BG3);
         SkyzRenderHelper.fillGradientV(ctx, 0, height * 2/3,  width, height / 3, SkyzTheme.BG3, SkyzTheme.BG1);
 
         // 2) Owo (nav, panes).
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         // 3) Player preview drawn into the preview-pane bounds.
         if (previewPane != null) drawPlayerPreview(ctx, mouseX, mouseY);
@@ -246,13 +249,13 @@ public class SkyzSkinEditorScreen extends BaseUIModelScreen<FlowLayout> {
      * provides x/y/w/h; we centre the entity inside it and rotate it to track
      * the mouse so users can see all sides.
      */
-    private void drawPlayerPreview(GuiGraphics ctx, int mouseX, int mouseY) {
+    private void drawPlayerPreview(GuiGraphicsExtractor ctx, int mouseX, int mouseY) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) {
             // No world loaded — show "log in to view skin" hint.
             int cx = previewPane.x() + previewPane.width() / 2;
             int cy = previewPane.y() + previewPane.height() / 2;
-            ctx.drawCenteredString(font,
+            ctx.centeredText(font,
                     "Join a world to preview your skin",
                     cx, cy - 4, SkyzColors.TEXT_MUTED);
             return;
@@ -267,7 +270,7 @@ public class SkyzSkinEditorScreen extends BaseUIModelScreen<FlowLayout> {
 
         // 26.1 InventoryScreen.renderEntityInInventoryFollowsMouse computes
         // yaw/pitch internally from the mouse position relative to the box.
-        InventoryScreen.renderEntityInInventoryFollowsMouse(
+        InventoryScreen.extractEntityInInventoryFollowsMouse(
                 ctx, x1, y1, x2, y2, scale, 0.0625f, (float) mouseX, (float) mouseY, player);
     }
 }

@@ -2,7 +2,7 @@ package net.skyz.client.screen;
 
 import io.wispforest.owo.ui.component.SliderComponent;
 import io.wispforest.owo.ui.core.Sizing;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.skyz.client.util.SkyzRenderHelper;
 
 /**
@@ -41,7 +41,7 @@ public class SkyzSliderComponent extends SliderComponent {
      * </ul>
      */
     @Override
-    public void renderWidget(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         int x = this.getX();
         int y = this.getY();
         int w = this.getWidth();

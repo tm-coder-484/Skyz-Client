@@ -2,7 +2,7 @@ package net.skyz.client.util;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.sounds.SoundManager;
@@ -43,7 +43,7 @@ public class SkyzButton extends AbstractWidget {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
+    public void onClick(net.minecraft.client.input.MouseButtonEvent click, boolean doubled) {
         action.run();
     }
 
@@ -54,7 +54,7 @@ public class SkyzButton extends AbstractWidget {
 
     // ── Render ───────────────────────────────────────────────────────────
     @Override
-    protected void renderWidget(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         hoverAnim = isHovered()
                 ? Math.min(1f, hoverAnim + delta * 0.20f)
                 : Math.max(0f, hoverAnim - delta * 0.20f);
@@ -167,7 +167,7 @@ public class SkyzButton extends AbstractWidget {
      * separator) and text, then renders icon + UPPERCASE letter-spaced text
      * centered as a group. Uses a 1-px letter-spacing for the Feather feel.
      */
-    private void drawCenteredIconLabel(GuiGraphics ctx, Font tr,
+    private void drawCenteredIconLabel(GuiGraphicsExtractor ctx, Font tr,
                                        int cx, int y, int colour) {
         String icon, text;
         int splitIdx = rawLabel.indexOf("  ");
@@ -187,7 +187,7 @@ public class SkyzButton extends AbstractWidget {
 
         int sx = cx - totalW / 2;
         if (!icon.isEmpty()) {
-            ctx.drawString(tr, icon, sx, y, colour, true);
+            ctx.text(tr, icon, sx, y, colour, true);
             sx += iconW + gap;
         }
         SkyzRenderHelper.drawTextSpaced(ctx, tr, upper, sx, y, spacing, colour, true);

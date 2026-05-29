@@ -2,7 +2,7 @@ package net.skyz.client.util;
 
 /**
  * Central colour palette for Skyz Client, matching the HTML/CSS design.
- * All colours are packed ARGB integers as expected by Minecraft's GuiGraphics.
+ * All colours are packed ARGB integers as expected by Minecraft's GuiGraphicsExtractor.
  */
 public final class SkyzColors {
 

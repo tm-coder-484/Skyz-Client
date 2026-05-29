@@ -5,7 +5,7 @@ import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -26,6 +26,9 @@ import net.skyz.client.util.AutoReconnectManager;
  * here so the user lands somewhere sensible).
  */
 public class SkyzDisconnectedScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private final Screen    parent;
     private final Component title;
@@ -91,11 +94,11 @@ public class SkyzDisconnectedScreen extends BaseUIModelScreen<FlowLayout> {
         }
     }
 
-    @Override public boolean shouldPause()      { return false; }
+    @Override public boolean isPauseScreen()      { return false; }
     @Override public boolean shouldCloseOnEsc() { return false; }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         ctx.fillGradient(0, 0, width, height, 0xCC1A0608, 0xCC050F2A);
     }
 }

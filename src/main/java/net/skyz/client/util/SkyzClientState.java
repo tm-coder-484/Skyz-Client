@@ -319,7 +319,7 @@ public final class SkyzClientState {
         for (int dx = -CHUNK_R; dx <= CHUNK_R; dx++) {
             for (int dz = -CHUNK_R; dz <= CHUNK_R; dz++) {
                 net.minecraft.world.level.chunk.LevelChunk chunk =
-                        world.getChunk(pCp.x + dx, pCp.z + dz);
+                        world.getChunk(pCp.x() + dx, pCp.z() + dz);
                 if (chunk == null) continue;
                 java.util.Map<net.minecraft.core.BlockPos,
                         net.minecraft.world.level.block.entity.BlockEntity> bes = chunk.getBlockEntities();
@@ -382,7 +382,7 @@ public final class SkyzClientState {
                 "[Skyz] " + typeLabel + " detected at "
                         + pos.getX() + ", " + pos.getY() + ", " + pos.getZ())
                 .copy().withStyle(net.minecraft.ChatFormatting.AQUA);
-        client.player.displayClientMessage(msg, false);
+        client.player.sendSystemMessage(msg);
     }
 
     /**
@@ -486,7 +486,7 @@ public final class SkyzClientState {
             for (int dz = -R; dz <= R; dz++) {
                 net.minecraft.world.level.chunk.LevelChunk chunk;
                 try {
-                    chunk = world.getChunkSource().getChunk(pCp.x + dx, pCp.z + dz, false);
+                    chunk = world.getChunkSource().getChunk(pCp.x() + dx, pCp.z() + dz, false);
                 } catch (Throwable t) { continue; }
                 if (chunk == null) continue;
 
@@ -515,9 +515,9 @@ public final class SkyzClientState {
                 if (!bsGroups.isEmpty()) {
                     try {
                         net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunk.getSections();
-                        int bottomY = chunk.getMinBuildHeight();
-                        int baseChunkX = (pCp.x + dx) << 4;
-                        int baseChunkZ = (pCp.z + dz) << 4;
+                        int bottomY = chunk.getMinY();
+                        int baseChunkX = (pCp.x() + dx) << 4;
+                        int baseChunkZ = (pCp.z() + dz) << 4;
                         for (int si = 0; si < sections.length; si++) {
                             net.minecraft.world.level.chunk.LevelChunkSection sec = sections[si];
                             if (sec == null || sec.hasOnlyAir()) continue;

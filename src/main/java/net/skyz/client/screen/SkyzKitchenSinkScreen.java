@@ -18,6 +18,9 @@ import net.skyz.client.SkyzClientMod;
  * screen → see change. No gradlew build, no MC restart.
  */
 public class SkyzKitchenSinkScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     private final Screen parent;
 
@@ -59,7 +62,7 @@ public class SkyzKitchenSinkScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

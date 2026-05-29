@@ -15,7 +15,7 @@ import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -47,11 +47,11 @@ import java.util.List;
  * styling, hover halos, and consistent layout as the rest of the ported
  * screens.
  *
- * The preview area, however, is rendered manually in {@link #render(GuiGraphics, int, int, float)}
+ * The preview area, however, is rendered manually in {@link #render(GuiGraphicsExtractor, int, int, float)}
  * because each HUD element has free-form (x, y, w, h) coordinates the user
  * sets by dragging. owo's flow / grid / stack layouts can't model that — and
  * the element previews need to read the same {@code SkyzHudState.ELEMENTS}
- * that the in-game HUD renderer uses, so we keep them as direct GuiGraphics
+ * that the in-game HUD renderer uses, so we keep them as direct GuiGraphicsExtractor
  * calls. Drag-and-drop lives in {@link #mouseClicked} / {@link #mouseDragged}
  * / {@link #mouseReleased}, which give super.mouseClicked() priority so owo
  * components (back, tab strip, toolbar buttons) get clicks first.
@@ -68,6 +68,9 @@ import java.util.List;
  * @see SkyzClientState
  */
 public class SkyzHudEditorScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     // ─── Layout constants ────────────────────────────────────────────────
     private static final int SIDEBAR_W      = 196;   // visible content width
@@ -594,15 +597,15 @@ public class SkyzHudEditorScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     // ─── Render (preview + super) ────────────────────────────────────────
-    @Override public boolean shouldPause() { return false; }
+    @Override public boolean isPauseScreen() { return false; }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // No-op — render() handles the simulated game background ourselves.
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // 1) Compute live preview width — shrinks/grows when the sidebar
         //    collapses. Used for both rendering bounds and scissor clip.
         int previewW = (sidebarOpen ? width - SIDEBAR_FULL_W - 8 : width - SIDEBAR_STRIP - 8);
@@ -624,7 +627,7 @@ public class SkyzHudEditorScreen extends BaseUIModelScreen<FlowLayout> {
                 previewW, (int) (height * .55f), 0xFF4A7FC0, 0xFF6AA0D8);
         SkyzRenderHelper.fillGradientV(ctx, 0, (int) (height * .55f),
                 previewW, height, 0xFF5A7A45, 0xFF3D5A2A);
-        ctx.drawCenteredString(font,
+        ctx.centeredText(font,
                 "Drag elements • Enable in sidebar • Toggle sidebar with [◄]",
                 previewW / 2, height / 2 - 4, 0x22FFFFFF);
 
@@ -647,7 +650,7 @@ public class SkyzHudEditorScreen extends BaseUIModelScreen<FlowLayout> {
         ctx.disableScissor();
 
         // 4) Owo (sidebar + chrome) on top.
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         // 5) Toast (re-uses parent screen's toast manager).
         if (parent != null) parent.toast.render(ctx, width, delta);
@@ -660,7 +663,7 @@ public class SkyzHudEditorScreen extends BaseUIModelScreen<FlowLayout> {
     /** Last known mouse position — used by render() to update drag positions. */
     private double lastMouseX, lastMouseY;
 
-    private void drawElPreview(GuiGraphics ctx, SkyzHudState.HudElementState el, int mx, int my) {
+    private void drawElPreview(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el, int mx, int my) {
         boolean hov  = mx >= el.x && mx <= el.x + el.w && my >= el.y && my <= el.y + el.h;
         boolean sel  = el == selected;
         boolean drag = el == dragging;
@@ -668,12 +671,12 @@ public class SkyzHudEditorScreen extends BaseUIModelScreen<FlowLayout> {
         int bg  = drag ? 0xCC1A5A8A : sel ? 0x993C8ABE : !el.enabled ? 0x44143C6E : 0xB8050F30;
         int brd = drag || sel ? 0xFF8CD2FF : !el.enabled ? 0x44446688 : 0x668CD2FF;
         SkyzRenderHelper.drawHudPanel(ctx, el.x, el.y, el.x + el.w, el.y + el.h, bg, brd);
-        ctx.drawString(font, el.icon, el.x + 3, el.y + (el.h - 8) / 2,
+        ctx.text(font, el.icon, el.x + 3, el.y + (el.h - 8) / 2,
                 el.enabled ? 0xFFFFFFFF : 0x88FFFFFF, false);
         String lbl = el.name;
         while (font.width(lbl) > el.w - 18 && lbl.length() > 3)
             lbl = lbl.substring(0, lbl.length() - 3) + "..";
-        ctx.drawString(font, lbl, el.x + 16, el.y + (el.h - 8) / 2,
+        ctx.text(font, lbl, el.x + 16, el.y + (el.h - 8) / 2,
                 el.enabled ? 0xCCDDFFFF : 0x55DDFFFF, false);
     }
 

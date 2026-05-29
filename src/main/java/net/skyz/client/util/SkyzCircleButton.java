@@ -1,7 +1,7 @@
 package net.skyz.client.util;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
@@ -40,7 +40,7 @@ public class SkyzCircleButton extends AbstractWidget {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
+    public void onClick(net.minecraft.client.input.MouseButtonEvent click, boolean doubled) {
         action.run();
     }
 
@@ -55,7 +55,7 @@ public class SkyzCircleButton extends AbstractWidget {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         hoverAnim = isHovered()
                 ? Math.min(1f, hoverAnim + delta * 0.20f)
                 : Math.max(0f, hoverAnim - delta * 0.20f);
@@ -107,7 +107,7 @@ public class SkyzCircleButton extends AbstractWidget {
         // Icon — vertically centered. Many emoji glyphs render off-baseline
         // so use 1-px upward nudge for visual centering.
         int textCol = SkyzColors.lerp(idleText, hoverText, hoverAnim);
-        ctx.drawCenteredString(
+        ctx.centeredText(
                 Minecraft.getInstance().font,
                 icon, cx, cy - 4, textCol);
     }

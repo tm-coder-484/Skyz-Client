@@ -5,7 +5,7 @@ import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.player.LocalPlayer;
@@ -29,6 +29,9 @@ import net.skyz.client.SkyzClientMod;
  * </ul>
  */
 public class SkyzDeathScreen extends BaseUIModelScreen<FlowLayout> {
+    /** Alias for the inherited Minecraft instance (26.1 renamed the Screen field client->minecraft). */
+    private final net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+
 
     /** Vanilla's threshold before Respawn becomes clickable. */
     private static final int RESPAWN_COOLDOWN_TICKS = 20;
@@ -139,7 +142,7 @@ public class SkyzDeathScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     // ─── Lifecycle ───────────────────────────────────────────────────────
-    @Override public boolean shouldPause() { return false; }
+    @Override public boolean isPauseScreen() { return false; }
 
     /** Vanilla blocks Esc on death so the player can't bypass the screen. */
     @Override public boolean shouldCloseOnEsc() { return false; }
@@ -155,20 +158,20 @@ public class SkyzDeathScreen extends BaseUIModelScreen<FlowLayout> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         // Red-tinted veil — like vanilla's death overlay but Skyz-themed.
         ctx.fillGradient(0, 0, width, height, 0xCC600C0C, 0xCC1A0608);
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
-        renderBackground(ctx, mouseX, mouseY, delta);
-        super.render(ctx, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+        extractBackground(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
         if (respawnBtn != null && !respawnBtn.active && !isHardcore) {
             // Cooldown hint under the buttons.
             int remaining = Math.max(0, RESPAWN_COOLDOWN_TICKS - ticksSinceDeath);
             String txt = "Respawn available in " + Math.max(1, remaining / 20 + 1) + "s...";
-            ctx.drawCenteredString(font, txt, width / 2, height / 2 + 80, 0x99CCCCCC);
+            ctx.centeredText(font, txt, width / 2, height / 2 + 80, 0x99CCCCCC);
         }
     }
 }

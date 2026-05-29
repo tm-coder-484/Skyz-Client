@@ -2,7 +2,7 @@ package net.skyz.client.render;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
@@ -93,7 +93,7 @@ public final class SkyzHudRenderer {
      * @param sessionStartMs time the player entered this session, used by the
      *                       Session Timer element
      */
-    public static void render(GuiGraphics ctx, Minecraft client,
+    public static void render(GuiGraphicsExtractor ctx, Minecraft client,
                               int W, int H, long sessionStartMs) {
         for (SkyzHudState.HudElementState el : SkyzHudState.ELEMENTS) {
             if (!el.enabled) continue;
@@ -102,7 +102,7 @@ public final class SkyzHudRenderer {
     }
 
     // ─── Element dispatcher ──────────────────────────────────────────────
-    private static void renderElement(GuiGraphics ctx, Minecraft client,
+    private static void renderElement(GuiGraphicsExtractor ctx, Minecraft client,
                                       SkyzHudState.HudElementState el,
                                       int W, int H, long sessionStartMs) {
         // Special-cased elements with bespoke rendering.
@@ -147,7 +147,7 @@ public final class SkyzHudRenderer {
                 // Fallback: bare panel + "icon name" — matches old behaviour
                 SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_BLUE);
                 int ty = el.y + (el.h - 8) / 2;
-                ctx.drawString(tr, el.icon + " " + el.name, el.x + 4, ty, TEXT_MUTED, true);
+                ctx.text(tr, el.icon + " " + el.name, el.x + 4, ty, TEXT_MUTED, true);
             }
         }
     }
@@ -158,34 +158,34 @@ public final class SkyzHudRenderer {
      * secondary suffix in muted blue. Used by FPS / CPS / Speed / Ping and
      * other "single number + label" elements.
      */
-    private static void drawValuePanel(GuiGraphics ctx, SkyzHudState.HudElementState el,
+    private static void drawValuePanel(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el,
                                        Font tr,
                                        String value, int valueColor,
                                        String suffix,
                                        int accent) {
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, accent);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, value, el.x + 6, ty, valueColor, true);
+        ctx.text(tr, value, el.x + 6, ty, valueColor, true);
         if (suffix != null) {
             int valW = tr.width(value);
-            ctx.drawString(tr, suffix, el.x + 6 + valW + 4, ty, TEXT_MUTED, true);
+            ctx.text(tr, suffix, el.x + 6 + valW + 4, ty, TEXT_MUTED, true);
         }
     }
 
-    private static void renderFps(GuiGraphics ctx, Minecraft client,
+    private static void renderFps(GuiGraphicsExtractor ctx, Minecraft client,
                                    SkyzHudState.HudElementState el, Font tr) {
         int f = client.getFps();
         int col = f >= 60 ? ACCENT_GREEN : f >= 30 ? ACCENT_YELLOW : ACCENT_RED;
         drawValuePanel(ctx, el, tr, String.valueOf(f), col, "FPS", col);
     }
 
-    private static void renderCps(GuiGraphics ctx, SkyzHudState.HudElementState el,
+    private static void renderCps(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el,
                                    Font tr) {
         drawValuePanel(ctx, el, tr, String.valueOf(SkyzClientState.cps),
                 TEXT_PRIMARY, "CPS", ACCENT_BLUE);
     }
 
-    private static void renderCoordinates(GuiGraphics ctx, Minecraft client,
+    private static void renderCoordinates(GuiGraphicsExtractor ctx, Minecraft client,
                                            SkyzHudState.HudElementState el, Font tr) {
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_BLUE);
         var p = client.player;
@@ -198,23 +198,23 @@ public final class SkyzHudRenderer {
             drawLabelValue(ctx, tr, "Z", String.format("%.0f", p.getZ()), x + 4, ty);
     }
 
-    private static int drawLabelValue(GuiGraphics ctx, Font tr,
+    private static int drawLabelValue(GuiGraphicsExtractor ctx, Font tr,
                                        String label, String value, int x, int y) {
-        ctx.drawString(tr, label, x, y, TEXT_MUTED, true);
+        ctx.text(tr, label, x, y, TEXT_MUTED, true);
         int lw = tr.width(label) + 2;
-        ctx.drawString(tr, value, x + lw, y, TEXT_PRIMARY, true);
+        ctx.text(tr, value, x + lw, y, TEXT_PRIMARY, true);
         return x + lw + tr.width(value);
     }
 
-    private static void renderBiome(GuiGraphics ctx, Minecraft client,
+    private static void renderBiome(GuiGraphicsExtractor ctx, Minecraft client,
                                      SkyzHudState.HudElementState el, Font tr) {
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_GREEN);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "🌿", el.x + 6, ty, ACCENT_GREEN, true);
-        ctx.drawString(tr, getBiomeName(client), el.x + 22, ty, TEXT_PRIMARY, true);
+        ctx.text(tr, "🌿", el.x + 6, ty, ACCENT_GREEN, true);
+        ctx.text(tr, getBiomeName(client), el.x + 22, ty, TEXT_PRIMARY, true);
     }
 
-    private static void renderSpeed(GuiGraphics ctx, Minecraft client,
+    private static void renderSpeed(GuiGraphicsExtractor ctx, Minecraft client,
                                      SkyzHudState.HudElementState el, Font tr) {
         var p = client.player;
         if (p == null) return;
@@ -224,13 +224,13 @@ public final class SkyzHudRenderer {
         int col = spd > 5.6 ? ACCENT_GREEN : spd > 4.3 ? ACCENT_YELLOW : TEXT_PRIMARY;
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, col);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "⚡", el.x + 6, ty, ACCENT_YELLOW, true);
-        ctx.drawString(tr, String.format("%.1f", spd), el.x + 18, ty, col, true);
-        ctx.drawString(tr, "b/s", el.x + 18 + tr.width(String.format("%.1f", spd)) + 4,
+        ctx.text(tr, "⚡", el.x + 6, ty, ACCENT_YELLOW, true);
+        ctx.text(tr, String.format("%.1f", spd), el.x + 18, ty, col, true);
+        ctx.text(tr, "b/s", el.x + 18 + tr.width(String.format("%.1f", spd)) + 4,
                 ty, TEXT_MUTED, true);
     }
 
-    private static void renderPing(GuiGraphics ctx, Minecraft client,
+    private static void renderPing(GuiGraphicsExtractor ctx, Minecraft client,
                                     SkyzHudState.HudElementState el, Font tr) {
         int ping = -1;
         boolean lan = client.isLocalServer();
@@ -258,27 +258,27 @@ public final class SkyzHudRenderer {
                 : ACCENT_RED;
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, col);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "📡", el.x + 6, ty, ACCENT_BLUE, true);
-        ctx.drawString(tr, pingStr, el.x + 22, ty, col, true);
+        ctx.text(tr, "📡", el.x + 6, ty, ACCENT_BLUE, true);
+        ctx.text(tr, pingStr, el.x + 22, ty, col, true);
         if (!lan && ping >= 0) {
             int valW = tr.width(pingStr);
-            ctx.drawString(tr, "ms", el.x + 22 + valW + 3, ty, TEXT_MUTED, true);
+            ctx.text(tr, "ms", el.x + 22 + valW + 3, ty, TEXT_MUTED, true);
         }
     }
 
-    private static void renderReach(GuiGraphics ctx, Minecraft client,
+    private static void renderReach(GuiGraphicsExtractor ctx, Minecraft client,
                                      SkyzHudState.HudElementState el, Font tr) {
         boolean targeting = client.hitResult != null
                 && client.hitResult.getType() == HitResult.Type.ENTITY;
         int col = targeting ? ACCENT_GREEN : TEXT_PRIMARY;
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, col);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "🎯", el.x + 6, ty, ACCENT_BLUE, true);
-        ctx.drawString(tr, "3.0", el.x + 22, ty, col, true);
-        ctx.drawString(tr, "m", el.x + 22 + tr.width("3.0") + 3, ty, TEXT_MUTED, true);
+        ctx.text(tr, "🎯", el.x + 6, ty, ACCENT_BLUE, true);
+        ctx.text(tr, "3.0", el.x + 22, ty, col, true);
+        ctx.text(tr, "m", el.x + 22 + tr.width("3.0") + 3, ty, TEXT_MUTED, true);
     }
 
-    private static void renderMemory(GuiGraphics ctx, SkyzHudState.HudElementState el,
+    private static void renderMemory(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el,
                                       Font tr) {
         Runtime rt = Runtime.getRuntime();
         long used = (rt.totalMemory() - rt.freeMemory()) / 1048576;
@@ -287,13 +287,13 @@ public final class SkyzHudRenderer {
         int col = pct < 70 ? ACCENT_GREEN : pct < 85 ? ACCENT_YELLOW : ACCENT_RED;
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, col);
         // Top label
-        ctx.drawString(tr, "🖥 " + used + " MB", el.x + 4, el.y + 2, TEXT_PRIMARY, true);
+        ctx.text(tr, "🖥 " + used + " MB", el.x + 4, el.y + 2, TEXT_PRIMARY, true);
         // Bar at the bottom
         SkyzRenderHelper.drawSkyzBar(ctx, el.x + 4, el.y + el.h - 5, el.w - 8, 3,
                 pct, col, (col & 0x00FFFFFF) | 0x99000000);
     }
 
-    private static void renderEntityCount(GuiGraphics ctx, Minecraft client,
+    private static void renderEntityCount(GuiGraphicsExtractor ctx, Minecraft client,
                                             SkyzHudState.HudElementState el, Font tr) {
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_BLUE);
         int count = 0;
@@ -301,23 +301,23 @@ public final class SkyzHudRenderer {
             for (Entity ignored : client.level.entitiesForRendering()) count++;
         }
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "👾", el.x + 6, ty, ACCENT_YELLOW, true);
-        ctx.drawString(tr, String.valueOf(count), el.x + 22, ty, TEXT_PRIMARY, true);
-        ctx.drawString(tr, "entities", el.x + 22 + tr.width(String.valueOf(count)) + 4,
+        ctx.text(tr, "👾", el.x + 6, ty, ACCENT_YELLOW, true);
+        ctx.text(tr, String.valueOf(count), el.x + 22, ty, TEXT_PRIMARY, true);
+        ctx.text(tr, "entities", el.x + 22 + tr.width(String.valueOf(count)) + 4,
                 ty, TEXT_MUTED, true);
     }
 
-    private static void renderSessionTimer(GuiGraphics ctx, SkyzHudState.HudElementState el,
+    private static void renderSessionTimer(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el,
                                             Font tr, long sessionStartMs) {
         long secs = (System.currentTimeMillis() - sessionStartMs) / 1000;
         String t = String.format("%d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60);
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_BLUE);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "⏱", el.x + 6, ty, ACCENT_BLUE, true);
-        ctx.drawString(tr, t, el.x + 18, ty, TEXT_PRIMARY, true);
+        ctx.text(tr, "⏱", el.x + 6, ty, ACCENT_BLUE, true);
+        ctx.text(tr, t, el.x + 18, ty, TEXT_PRIMARY, true);
     }
 
-    private static void renderBlockInfo(GuiGraphics ctx, Minecraft client,
+    private static void renderBlockInfo(GuiGraphicsExtractor ctx, Minecraft client,
                                          SkyzHudState.HudElementState el, Font tr) {
         String info = "Air";
         if (client.hitResult != null
@@ -332,8 +332,8 @@ public final class SkyzHudRenderer {
         }
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_BLUE);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "🧱", el.x + 6, ty, ACCENT_YELLOW, true);
-        ctx.drawString(tr, info, el.x + 22, ty, TEXT_PRIMARY, true);
+        ctx.text(tr, "🧱", el.x + 6, ty, ACCENT_YELLOW, true);
+        ctx.text(tr, info, el.x + 22, ty, TEXT_PRIMARY, true);
     }
 
     // ─── Bars ────────────────────────────────────────────────────────────
@@ -356,7 +356,7 @@ public final class SkyzHudRenderer {
      * this graceful-degrade fixes the "I enabled Helmet Durability and
      * nothing shows" report without forcing a Reset.
      */
-    private static void drawIconBarPanel(GuiGraphics ctx, Font tr,
+    private static void drawIconBarPanel(GuiGraphicsExtractor ctx, Font tr,
                                           SkyzHudState.HudElementState el,
                                           String icon, int iconColor,
                                           String label, int labelColor,
@@ -367,19 +367,19 @@ public final class SkyzHudRenderer {
         if (el.h < 18) {
             // Compact: single-line icon + label, no bar. Vertically centred.
             int ty = el.y + (el.h - 8) / 2;
-            ctx.drawString(tr, icon, el.x + 4, ty, iconColor, true);
-            ctx.drawString(tr, label, el.x + 16, ty, labelColor, true);
+            ctx.text(tr, icon, el.x + 4, ty, iconColor, true);
+            ctx.text(tr, label, el.x + 16, ty, labelColor, true);
             return;
         }
 
-        ctx.drawString(tr, icon, el.x + 4, el.y + 3, iconColor, true);
-        ctx.drawString(tr, label, el.x + 16, el.y + 3, labelColor, true);
+        ctx.text(tr, icon, el.x + 4, el.y + 3, iconColor, true);
+        ctx.text(tr, label, el.x + 16, el.y + 3, labelColor, true);
         // Bar pinned to bottom edge with a 4px inset from sides.
         int by = el.y + el.h - 5;
         SkyzRenderHelper.drawSkyzBar(ctx, el.x + 4, by, el.w - 8, 3, pct, barTop, barBot);
     }
 
-    private static void renderHealthBar(GuiGraphics ctx, Minecraft client,
+    private static void renderHealthBar(GuiGraphicsExtractor ctx, Minecraft client,
                                          SkyzHudState.HudElementState el, Font tr) {
         var p = client.player;
         if (p == null) return;
@@ -391,7 +391,7 @@ public final class SkyzHudRenderer {
                 pct, 0xFFE03030, 0xFF8C1818, ACCENT_RED);
     }
 
-    private static void renderHungerBar(GuiGraphics ctx, Minecraft client,
+    private static void renderHungerBar(GuiGraphicsExtractor ctx, Minecraft client,
                                          SkyzHudState.HudElementState el, Font tr) {
         var p = client.player;
         if (p == null) return;
@@ -402,7 +402,7 @@ public final class SkyzHudRenderer {
                 food * 5, 0xFFE08030, 0xFF8C4818, ACCENT_YELLOW);
     }
 
-    private static void renderSaturationBar(GuiGraphics ctx, Minecraft client,
+    private static void renderSaturationBar(GuiGraphicsExtractor ctx, Minecraft client,
                                              SkyzHudState.HudElementState el, Font tr) {
         var p = client.player;
         if (p == null) return;
@@ -413,7 +413,7 @@ public final class SkyzHudRenderer {
                 (int) (sat / 20 * 100), 0xFFFFD700, 0xFF8C7400, ACCENT_YELLOW);
     }
 
-    private static void renderArmorBar(GuiGraphics ctx, Minecraft client,
+    private static void renderArmorBar(GuiGraphicsExtractor ctx, Minecraft client,
                                         SkyzHudState.HudElementState el, Font tr) {
         var p = client.player;
         if (p == null) return;
@@ -424,7 +424,7 @@ public final class SkyzHudRenderer {
                 armor * 5, 0xFFCCCCCC, 0xFF666666, 0xFFAAAAAA);
     }
 
-    private static void renderToolDurability(GuiGraphics ctx, Minecraft client,
+    private static void renderToolDurability(GuiGraphicsExtractor ctx, Minecraft client,
                                               SkyzHudState.HudElementState el, Font tr) {
         var p = client.player;
         if (p == null) return;
@@ -432,7 +432,7 @@ public final class SkyzHudRenderer {
         if (tool.isEmpty() || !tool.isDamageableItem()) {
             SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, 0xFF555555);
             int ty = el.y + (el.h - 8) / 2;
-            ctx.drawString(tr, "⛏ No tool", el.x + 6, ty, TEXT_MUTED, true);
+            ctx.text(tr, "⛏ No tool", el.x + 6, ty, TEXT_MUTED, true);
             return;
         }
         int dur = tool.getMaxDamage() - tool.getDamageValue(), max = tool.getMaxDamage();
@@ -444,7 +444,7 @@ public final class SkyzHudRenderer {
                 pct, col, (col & 0x00FFFFFF) | 0x99000000, col);
     }
 
-    private static void renderArmorSlot(GuiGraphics ctx, Minecraft client,
+    private static void renderArmorSlot(GuiGraphicsExtractor ctx, Minecraft client,
                                          SkyzHudState.HudElementState el,
                                          net.minecraft.world.entity.EquipmentSlot slot,
                                          String icon, Font tr) {
@@ -454,7 +454,7 @@ public final class SkyzHudRenderer {
         if (s.isEmpty()) {
             SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, 0xFF555555);
             int ty = el.y + (el.h - 8) / 2;
-            ctx.drawString(tr, icon + " None", el.x + 6, ty, TEXT_MUTED, true);
+            ctx.text(tr, icon + " None", el.x + 6, ty, TEXT_MUTED, true);
             return;
         }
         if (s.isDamageableItem()) {
@@ -468,12 +468,12 @@ public final class SkyzHudRenderer {
         } else {
             SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_BLUE);
             int ty = el.y + (el.h - 8) / 2;
-            ctx.drawString(tr, icon + " " + s.getHoverName().getString(),
+            ctx.text(tr, icon + " " + s.getHoverName().getString(),
                     el.x + 6, ty, TEXT_PRIMARY, true);
         }
     }
 
-    private static void renderAttackCooldown(GuiGraphics ctx, Minecraft client,
+    private static void renderAttackCooldown(GuiGraphicsExtractor ctx, Minecraft client,
                                               SkyzHudState.HudElementState el) {
         var p = client.player;
         if (p == null) return;
@@ -484,7 +484,7 @@ public final class SkyzHudRenderer {
                 pct >= 100 ? 0xFFCC7800 : 0xFF552200);
     }
 
-    private static void renderComboCounter(GuiGraphics ctx, SkyzHudState.HudElementState el,
+    private static void renderComboCounter(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el,
                                             Font tr) {
         int combo = SkyzClientState.comboCount;
         if (combo <= 0) return;
@@ -493,26 +493,26 @@ public final class SkyzHudRenderer {
         String big = String.valueOf(combo);
         // Big number centered, "combo" muted underneath if there's vertical room.
         if (el.h >= 22) {
-            ctx.drawCenteredString(tr, big, el.x + el.w / 2, el.y + 4, col);
-            ctx.drawCenteredString(tr, "combo", el.x + el.w / 2, el.y + el.h - 11, TEXT_MUTED);
+            ctx.centeredText(tr, big, el.x + el.w / 2, el.y + 4, col);
+            ctx.centeredText(tr, "combo", el.x + el.w / 2, el.y + el.h - 11, TEXT_MUTED);
         } else {
-            ctx.drawCenteredString(tr, big + " combo",
+            ctx.centeredText(tr, big + " combo",
                     el.x + el.w / 2, el.y + (el.h - 8) / 2, col);
         }
     }
 
-    private static void renderTotemPops(GuiGraphics ctx, SkyzHudState.HudElementState el,
+    private static void renderTotemPops(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el,
                                          Font tr) {
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_GREEN);
         int ty = el.y + (el.h - 8) / 2;
-        ctx.drawString(tr, "🌼", el.x + 6, ty, ACCENT_YELLOW, true);
-        ctx.drawString(tr, "Totems", el.x + 22, ty, TEXT_PRIMARY, true);
+        ctx.text(tr, "🌼", el.x + 6, ty, ACCENT_YELLOW, true);
+        ctx.text(tr, "Totems", el.x + 22, ty, TEXT_PRIMARY, true);
         String n = String.valueOf(SkyzClientState.totemPops);
-        ctx.drawString(tr, n, el.x + el.w - 4 - tr.width(n), ty, ACCENT_GREEN, true);
+        ctx.text(tr, n, el.x + el.w - 4 - tr.width(n), ty, ACCENT_GREEN, true);
     }
 
     // ─── TNT timer ───────────────────────────────────────────────────────
-    private static void renderTntTimer(GuiGraphics ctx, Minecraft client,
+    private static void renderTntTimer(GuiGraphicsExtractor ctx, Minecraft client,
                                         SkyzHudState.HudElementState el) {
         if (client.level == null || client.player == null) return;
         List<PrimedTnt> tnts = client.level.getEntitiesOfClass(PrimedTnt.class,
@@ -530,19 +530,19 @@ public final class SkyzHudRenderer {
         Font tr = client.font;
         int ty = el.y + (el.h - 8) / 2;
 
-        ctx.drawString(tr, "💥", el.x + 6, ty, ACCENT_TNT, true);
+        ctx.text(tr, "💥", el.x + 6, ty, ACCENT_TNT, true);
         if (closest != null) {
             float fuse = closest.getFuse() / 20f;
             String label = tnts.size() + " TNT · " + String.format("%.1fs", fuse);
             int col = fuse < 1f ? 0xFFFF4444 : 0xFFFF9944;
-            ctx.drawString(tr, label, el.x + 22, ty, col, true);
+            ctx.text(tr, label, el.x + 22, ty, col, true);
         } else {
-            ctx.drawString(tr, tnts.size() + " TNT", el.x + 22, ty, ACCENT_YELLOW, true);
+            ctx.text(tr, tnts.size() + " TNT", el.x + 22, ty, ACCENT_YELLOW, true);
         }
     }
 
     // ─── Enemy info ──────────────────────────────────────────────────────
-    private static void renderEnemyInfo(GuiGraphics ctx, Minecraft client,
+    private static void renderEnemyInfo(GuiGraphicsExtractor ctx, Minecraft client,
                                          SkyzHudState.HudElementState el) {
         if (!(client.hitResult instanceof EntityHitResult ehr)) return;
         Entity target = ehr.getEntity();
@@ -552,30 +552,30 @@ public final class SkyzHudRenderer {
         Font tr = client.font;
         int y = el.y + 4;
 
-        ctx.drawString(tr, "💀 " + living.getDisplayName().getString(),
+        ctx.text(tr, "💀 " + living.getDisplayName().getString(),
                 el.x + 6, y, 0xFFFF8888, true); y += 12;
 
         float hp = living.getHealth(), maxHp = living.getMaxHealth();
         int pct = maxHp > 0 ? (int) (hp / maxHp * 100) : 0;
         SkyzRenderHelper.drawSkyzBar(ctx, el.x + 6, y, el.w - 12, 6, pct,
                 0xFFE03030, 0xFF8C1818);
-        ctx.drawString(tr, String.format("%.0f / %.0f HP", hp, maxHp),
+        ctx.text(tr, String.format("%.0f / %.0f HP", hp, maxHp),
                 el.x + 6, y + 8, 0xFFFFAAAA, true); y += 22;
 
         int armor = living.getArmorValue();
-        ctx.drawString(tr, "🛡 " + armor + " armor", el.x + 6, y, 0xFFCCCCCC, true); y += 12;
+        ctx.text(tr, "🛡 " + armor + " armor", el.x + 6, y, 0xFFCCCCCC, true); y += 12;
 
         if (living instanceof Player pl) {
             ItemStack held = pl.getMainHandItem();
             if (!held.isEmpty()) {
-                ctx.drawString(tr, "⚔ " + held.getHoverName().getString(),
+                ctx.text(tr, "⚔ " + held.getHoverName().getString(),
                         el.x + 6, y, 0xFFFFDD88, true);
             }
         }
     }
 
     // ─── Nearby players ──────────────────────────────────────────────────
-    private static void renderNearbyPlayers(GuiGraphics ctx, Minecraft client,
+    private static void renderNearbyPlayers(GuiGraphicsExtractor ctx, Minecraft client,
                                               SkyzHudState.HudElementState el) {
         if (client.level == null || client.player == null) return;
         Font tr = client.font;
@@ -612,7 +612,7 @@ public final class SkyzHudRenderer {
             int compactH = 18;
             SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, compactH, ACCENT_BLUE);
             int ty = el.y + (compactH - 8) / 2;
-            ctx.drawString(tr, "👥 None nearby", el.x + 6, ty, TEXT_MUTED, true);
+            ctx.text(tr, "👥 None nearby", el.x + 6, ty, TEXT_MUTED, true);
             return;
         }
 
@@ -635,26 +635,26 @@ public final class SkyzHudRenderer {
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, drawH, ACCENT_BLUE);
 
         int y = el.y + 4;
-        ctx.drawString(tr, "👥 Nearby (" + totalCount + ")",
+        ctx.text(tr, "👥 Nearby (" + totalCount + ")",
                 el.x + 6, y, ACCENT_BLUE, true); y += 12;
         for (int i = 0; i < displayCount; i++) {
             Player p = nearby.get(i);
             String name = p.getName().getString();
             String distStr = Math.round(p.distanceTo(client.player)) + "m";
-            ctx.drawString(tr, name, el.x + 6, y, TEXT_PRIMARY, true);
-            ctx.drawString(tr, distStr,
+            ctx.text(tr, name, el.x + 6, y, TEXT_PRIMARY, true);
+            ctx.text(tr, distStr,
                     el.x + el.w - 4 - tr.width(distStr), y, TEXT_MUTED, true);
             y += 10;
         }
         if (hasMore) {
             int hidden = totalCount - displayCount;
-            ctx.drawString(tr, "+ " + hidden + " more",
+            ctx.text(tr, "+ " + hidden + " more",
                     el.x + 6, y, TEXT_MUTED, true);
         }
     }
 
     // ─── Compass ─────────────────────────────────────────────────────────
-    private static void renderCompass(GuiGraphics ctx, Minecraft client,
+    private static void renderCompass(GuiGraphicsExtractor ctx, Minecraft client,
                                        SkyzHudState.HudElementState el) {
         SkyzRenderHelper.drawSkyzHudPanel(ctx, el.x, el.y, el.w, el.h, ACCENT_BLUE);
         var p = client.player;
@@ -679,7 +679,7 @@ public final class SkyzHudRenderer {
         int cx = el.x + el.w / 2;
 
         ctx.enableScissor(el.x + 1, el.y + 1, el.x + el.w - 1, el.y + el.h - 1);
-        ctx.drawString(tr, strip, cx - offset - stripHalf / 2,
+        ctx.text(tr, strip, cx - offset - stripHalf / 2,
                 el.y + (el.h - 8) / 2, TEXT_PRIMARY, true);
         ctx.disableScissor();
 
@@ -690,11 +690,11 @@ public final class SkyzHudRenderer {
         int dirW = tr.width(dir) + 6;
         ctx.fill(el.x + el.w - dirW - 2, el.y + 2,
                 el.x + el.w - 2, el.y + 11, 0x55091E46);
-        ctx.drawString(tr, dir, el.x + el.w - dirW + 1, el.y + 3, ACCENT_BLUE, true);
+        ctx.text(tr, dir, el.x + el.w - dirW + 1, el.y + 3, ACCENT_BLUE, true);
     }
 
     // ─── Potion effects ──────────────────────────────────────────────────
-    private static void renderPotions(GuiGraphics ctx, Minecraft client,
+    private static void renderPotions(GuiGraphicsExtractor ctx, Minecraft client,
                                         SkyzHudState.HudElementState el) {
         if (client.player == null) return;
         var effects = client.player.getActiveEffects();
@@ -717,15 +717,15 @@ public final class SkyzHudRenderer {
             }
             int dur = effect.getDuration() / 20;
             String durStr = dur > 60 ? (dur / 60) + "m" : dur + "s";
-            ctx.drawString(tr, name, el.x + 6, iy + 5, TEXT_PRIMARY, true);
-            ctx.drawString(tr, durStr,
+            ctx.text(tr, name, el.x + 6, iy + 5, TEXT_PRIMARY, true);
+            ctx.text(tr, durStr,
                     el.x + el.w - 4 - tr.width(durStr), iy + 5, accent, true);
             iy += 20;
         }
     }
 
     // ─── Custom crosshair ────────────────────────────────────────────────
-    private static void renderCrosshair(GuiGraphics ctx, SkyzHudState.HudElementState el) {
+    private static void renderCrosshair(GuiGraphicsExtractor ctx, SkyzHudState.HudElementState el) {
         int cx = el.x + el.w / 2, cy = el.y + el.h / 2, size = 6;
         // Soft drop-shadow then a 1-px white cross.
         ctx.fill(cx - size, cy, cx + size + 1, cy + 1, 0x99000000);
@@ -735,7 +735,7 @@ public final class SkyzHudRenderer {
     }
 
     // ─── Keystrokes ──────────────────────────────────────────────────────
-    private static void renderKeystrokes(GuiGraphics ctx, Minecraft client,
+    private static void renderKeystrokes(GuiGraphicsExtractor ctx, Minecraft client,
                                           SkyzHudState.HudElementState el) {
         var opts = client.options;
         int kw = 22, kh = 18, gap = 2;
@@ -747,7 +747,7 @@ public final class SkyzHudRenderer {
                 kw * 3 + gap * 2, kh, opts.keyJump.isDown());
     }
 
-    private static void drawKey(GuiGraphics ctx, Minecraft client, String label,
+    private static void drawKey(GuiGraphicsExtractor ctx, Minecraft client, String label,
                                  int x, int y, int w, int h, boolean pressed) {
         int r = h < 10 ? 2 : 3;
         if (pressed) {
@@ -764,7 +764,7 @@ public final class SkyzHudRenderer {
             SkyzRenderHelper.drawRoundedBorder(ctx, x, y, w, h, r, 0x558CD2FF);
         }
         if (!label.isBlank()) {
-            ctx.drawCenteredString(client.font, label,
+            ctx.centeredText(client.font, label,
                     x + w / 2, y + (h - 8) / 2, pressed ? 0xFFFFFFFF : 0xCCB0D8FF);
         }
     }
@@ -781,7 +781,7 @@ public final class SkyzHudRenderer {
      * <p>This is a verbatim move from the old InGameHudMixin — the perf work
      * here was non-trivial and we don't change it for this port.
      */
-    private static void renderMinimap(GuiGraphics ctx, Minecraft client,
+    private static void renderMinimap(GuiGraphicsExtractor ctx, Minecraft client,
                                        SkyzHudState.HudElementState el) {
         if (client.level == null || client.player == null) return;
         int mx = el.x, my = el.y, mw = el.w, mh = el.h;
@@ -908,17 +908,11 @@ public final class SkyzHudRenderer {
         }
 
         if (minimapTexture != null) {
-            // TODO(port): GuiGraphics texture-blit signature in 26.1 — original
+            // TODO(port): GuiGraphicsExtractor texture-blit signature in 26.1 — original
             // yarn used ctx.drawTexture(RenderPipelines.GUI_TEXTURED, id, x, y,
             // u, v, w, h, texW, texH). Mojang's equivalent is `ctx.blit(...)`
             // with a RenderType argument. Using the closest available overload.
-            ctx.blit(
-                    net.minecraft.client.renderer.rendertype.RenderType::guiTextured,
-                    MINIMAP_TEX_ID,
-                    mapX, mapY,
-                    0f, 0f,
-                    mapW, mapH,
-                    mapW, mapH);
+            ctx.blit(MINIMAP_TEX_ID, mapX, mapY, mapW, mapH, 0f, 1f, 0f, 1f);
         }
 
         // Polished frame: inner ring + soft outer halo.
@@ -956,7 +950,7 @@ public final class SkyzHudRenderer {
         SkyzRenderHelper.fillCircle(ctx, cx - wx, cy - wy, 1, 0xCCFF6666);
 
         // "N" label.
-        ctx.drawString(client.font, "N",
+        ctx.text(client.font, "N",
                 cx - client.font.width("N") / 2, my + 2, 0xFFFFFFFF, true);
     }
 
@@ -994,7 +988,7 @@ public final class SkyzHudRenderer {
             int scanY;
             if (caveMode && playerUnderground) {
                 scanY = playerY + 1;
-                while (scanY > client.level.getMinBuildHeight()) {
+                while (scanY > client.level.getMinY()) {
                     mp.set(worldX, scanY, worldZ);
                     if (!client.level.getBlockState(mp).isAir()) break;
                     scanY--;
@@ -1002,7 +996,7 @@ public final class SkyzHudRenderer {
             } else {
                 scanY = surfaceY;
             }
-            if (scanY < client.level.getMinBuildHeight()) return 0xFF111111;
+            if (scanY < client.level.getMinY()) return 0xFF111111;
 
             mp.set(worldX, scanY, worldZ);
             int rgb = getBlockMapColor(client.level.getBlockState(mp));
@@ -1042,7 +1036,7 @@ public final class SkyzHudRenderer {
             Optional<ResourceKey<Biome>> key = client.level
                     .getBiome(client.player.blockPosition()).unwrapKey();
             if (key.isPresent()) {
-                String raw = key.get().location().getPath();
+                String raw = key.get().identifier().getPath();
                 return raw.isEmpty() ? "Unknown"
                         : Character.toUpperCase(raw.charAt(0)) + raw.substring(1).replace('_', ' ');
             }
