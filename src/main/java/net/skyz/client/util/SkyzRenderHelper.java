@@ -1,6 +1,8 @@
 package net.skyz.client.util;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import io.wispforest.owo.ui.core.OwoUIGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.gui.Font;
 
 /**
@@ -13,20 +15,20 @@ public final class SkyzRenderHelper {
 
     // ── Solid rectangles ─────────────────────────────────────────────────
 
-    public static void fillRect(GuiGraphics ctx, int x, int y, int w, int h, int colour) {
+    public static void fillRect(GuiGraphicsExtractor ctx, int x, int y, int w, int h, int colour) {
         if (w <= 0 || h <= 0) return;
         ctx.fill(x, y, x + w, y + h, colour);
     }
 
     // ── Gradient fills ───────────────────────────────────────────────────
 
-    public static void fillGradientV(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void fillGradientV(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                      int colourTop, int colourBottom) {
         if (w <= 0 || h <= 0) return;
         ctx.fillGradient(x, y, x + w, y + h, colourTop, colourBottom);
     }
 
-    public static void fillGradientH(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void fillGradientH(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                      int colourLeft, int colourRight) {
         if (w <= 0 || h <= 0) return;
         int slices = 16;
@@ -46,7 +48,7 @@ public final class SkyzRenderHelper {
      * Tiny widgets get radius 2, mid-size get 4, large get 6. Keeps the
      * Feather glass aesthetic without per-call-site changes.
      */
-    public static void fillPanel(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void fillPanel(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                  int fill, int border) {
         if (w <= 0 || h <= 0) return;
         int small = Math.min(w, h);
@@ -60,13 +62,13 @@ public final class SkyzRenderHelper {
         drawRoundedBorder(ctx, x, y, w, h, r, border);
     }
 
-    public static void fillCard(GuiGraphics ctx, int x, int y, int w, int h) {
+    public static void fillCard(GuiGraphicsExtractor ctx, int x, int y, int w, int h) {
         fillGlassPanel(ctx, x, y, w, h, 7, SkyzColors.CARD_BG, SkyzColors.CARD_BORDER);
     }
 
     // ── Dividers ─────────────────────────────────────────────────────────
 
-    public static void drawDivider(GuiGraphics ctx, int x, int y, int w) {
+    public static void drawDivider(GuiGraphicsExtractor ctx, int x, int y, int w) {
         int third = w / 3;
         fillGradientH(ctx, x,             y, third,       1, 0x00AADDFF, 0x33AADDFF);
         fillRect(ctx,      x + third,     y, w - third*2, 1, 0x33AADDFF);
@@ -78,7 +80,7 @@ public final class SkyzRenderHelper {
     /**
      * Filled rounded rectangle. Corners approximated with horizontal scanline arcs.
      */
-    public static void fillRoundedRect(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void fillRoundedRect(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                        int radius, int colour) {
         if (w <= 0 || h <= 0) return;
         if (radius <= 0) { fillRect(ctx, x, y, w, h, colour); return; }
@@ -111,7 +113,7 @@ public final class SkyzRenderHelper {
      * a separate {@code fillGradientV} sheen on top of a rounded body
      * produces.
      */
-    public static void fillRoundedRectGradient(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void fillRoundedRectGradient(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                                int radius, int colourTop, int colourBottom) {
         if (w <= 0 || h <= 0) return;
         if (radius <= 0) { fillGradientV(ctx, x, y, w, h, colourTop, colourBottom); return; }
@@ -148,7 +150,7 @@ public final class SkyzRenderHelper {
     /**
      * 1-px rounded outline. Uses Bresenham-like sampling for the corner curve.
      */
-    public static void drawRoundedBorder(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void drawRoundedBorder(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                          int radius, int colour) {
         if (w <= 0 || h <= 0) return;
         if (radius <= 0) {
@@ -185,7 +187,7 @@ public final class SkyzRenderHelper {
      * Rounded panel: filled body + 1-px accent border + subtle inner top shimmer
      * (matches the .G / .card design from the HTML).
      */
-    public static void fillRoundedPanel(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void fillRoundedPanel(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                         int radius, int fill, int border) {
         fillRoundedRect(ctx, x, y, w, h, radius, fill);
         drawRoundedBorder(ctx, x, y, w, h, radius, border);
@@ -198,7 +200,7 @@ public final class SkyzRenderHelper {
      * Glassy rounded panel — background dim + vertical highlight gradient + accent border + shimmer.
      * Approximates the CSS backdrop-filter:blur + linear glass overlay used in the HTML.
      */
-    public static void fillGlassPanel(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void fillGlassPanel(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                       int radius, int baseFill, int border) {
         // Body fill (semi-opaque, like the panel-bg variable)
         fillRoundedRect(ctx, x, y, w, h, radius, baseFill);
@@ -216,7 +218,7 @@ public final class SkyzRenderHelper {
 
     // ── Circles ──────────────────────────────────────────────────────────
 
-    public static void fillCircle(GuiGraphics ctx, int cx, int cy, int radius, int colour) {
+    public static void fillCircle(GuiGraphicsExtractor ctx, int cx, int cy, int radius, int colour) {
         if (radius <= 0) return;
         int r = radius;
         for (int dy = -r; dy < r; dy++) {
@@ -227,7 +229,7 @@ public final class SkyzRenderHelper {
         }
     }
 
-    public static void drawCircleOutline(GuiGraphics ctx, int cx, int cy, int radius, int colour) {
+    public static void drawCircleOutline(GuiGraphicsExtractor ctx, int cx, int cy, int radius, int colour) {
         if (radius <= 0) return;
         int r = radius;
         int prevDx = -1;
@@ -253,7 +255,7 @@ public final class SkyzRenderHelper {
     /**
      * Circular glass button body — base disc + radial-style highlight + accent ring.
      */
-    public static void fillGlassCircle(GuiGraphics ctx, int cx, int cy, int radius,
+    public static void fillGlassCircle(GuiGraphicsExtractor ctx, int cx, int cy, int radius,
                                        int baseFill, int border) {
         fillCircle(ctx, cx, cy, radius, baseFill);
         // Top sheen — smaller offset disc with white alpha
@@ -289,7 +291,7 @@ public final class SkyzRenderHelper {
     }
 
     /** Draws each character of {@code text} separately with {@code spacing} extra px between them. */
-    public static void drawTextSpaced(net.minecraft.client.gui.GuiGraphics ctx,
+    public static void drawTextSpaced(net.minecraft.client.gui.GuiGraphicsExtractor ctx,
                                       net.minecraft.client.gui.Font tr,
                                       String text, int x, int y, int spacing,
                                       int colour, boolean shadow) {
@@ -297,13 +299,13 @@ public final class SkyzRenderHelper {
         int cursor = x;
         for (int i = 0; i < text.length(); i++) {
             String c = String.valueOf(text.charAt(i));
-            ctx.drawString(tr, c, cursor, y, colour, shadow);
+            OwoUIGraphics.of(ctx).drawText(Component.literal(c), (float) cursor, (float) y, 1.0f, colour);
             cursor += tr.width(c) + spacing;
         }
     }
 
     /** Centered letter-spaced text. */
-    public static void drawTextSpacedCentered(net.minecraft.client.gui.GuiGraphics ctx,
+    public static void drawTextSpacedCentered(net.minecraft.client.gui.GuiGraphicsExtractor ctx,
                                               net.minecraft.client.gui.Font tr,
                                               String text, int cx, int y, int spacing,
                                               int colour, boolean shadow) {
@@ -317,7 +319,7 @@ public final class SkyzRenderHelper {
      * Cheap drop-shadow approximation: 3 receding rectangles below the element.
      * Use for cards/buttons that need to "pop" off the background.
      */
-    public static void drawSoftShadow(GuiGraphics ctx, int x, int y, int w, int h, int radius) {
+    public static void drawSoftShadow(GuiGraphicsExtractor ctx, int x, int y, int w, int h, int radius) {
         int r = Math.max(0, radius);
         fillRoundedRect(ctx, x - 1, y + 2, w + 2, h, r, 0x33000000);
         fillRoundedRect(ctx, x - 2, y + 4, w + 4, h, r, 0x22000000);
@@ -330,7 +332,7 @@ public final class SkyzRenderHelper {
      * Glass HUD panel with a thin accent strip along the top — drawn with
      * the same point-coords convention as ctx.fill (x1, y1, x2, y2).
      */
-    public static void drawHudPanel(net.minecraft.client.gui.GuiGraphics ctx,
+    public static void drawHudPanel(net.minecraft.client.gui.GuiGraphicsExtractor ctx,
                                     int x1, int y1, int x2, int y2,
                                     int bgColor, int accentColor) {
         int x = Math.min(x1, x2), y = Math.min(y1, y2);
@@ -352,7 +354,7 @@ public final class SkyzRenderHelper {
     /**
      * Accent glow halo (used on hover for buttons / active cards).
      */
-    public static void drawGlow(GuiGraphics ctx, int x, int y, int w, int h, int radius, int colour) {
+    public static void drawGlow(GuiGraphicsExtractor ctx, int x, int y, int w, int h, int radius, int colour) {
         int r = Math.max(0, radius);
         int base = colour & 0x00FFFFFF;
         fillRoundedRect(ctx, x - 2, y - 2, w + 4, h + 4, r + 2, (0x22 << 24) | base);
@@ -369,7 +371,7 @@ public final class SkyzRenderHelper {
      * the Skyz blue {@code 0xFF8CD2FF} as a neutral default). Passing {@code 0}
      * suppresses the stripe entirely.
      */
-    public static void drawSkyzHudPanel(GuiGraphics ctx, int x, int y, int w, int h, int accent) {
+    public static void drawSkyzHudPanel(GuiGraphicsExtractor ctx, int x, int y, int w, int h, int accent) {
         if (w <= 0 || h <= 0) return;
         int r = h < 8 ? 1 : h < 14 ? 2 : 3;
         // Gradient body — slightly lighter top → darker bottom for depth.
@@ -391,7 +393,7 @@ public final class SkyzRenderHelper {
      * {@code colBot} define the gradient of the FILLED portion; the empty
      * portion uses a faint track colour so the bar is always visible at 0%.
      */
-    public static void drawSkyzBar(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void drawSkyzBar(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                     int pct, int colTop, int colBot) {
         if (w <= 0 || h <= 0) return;
         int r = Math.min(h / 2, 3);
