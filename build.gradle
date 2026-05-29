@@ -1,0 +1,77 @@
+plugins {
+    // 26.1 buildscript uses the new `net.fabricmc.fabric-loom` plugin
+    // (the old `fabric-loom` is gone). No remapping step because MC is
+    // unobfuscated from 26.1 — what we compile against is what ships.
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven { url 'https://maven.fabricmc.net/' }
+    maven {
+        name = "Terraformers"
+        url  = "https://maven.terraformersmc.com/"
+    }
+    maven { url 'https://maven.wispforest.io/releases/' }
+    maven { url 'https://jitpack.io' }
+    mavenCentral()
+}
+
+dependencies {
+    // No `mappings` line in 26.1 — Mojang ships unobfuscated names directly,
+    // so Loom doesn't have to remap. This is the single biggest buildscript
+    // change vs the 1.21.x era.
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Mod Menu — compileOnly so the mod doesn't require it at runtime.
+    // Was `modCompileOnly` in 1.21.11 — `mod*` prefix is gone in 26.1.
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    // owo-lib — runtime dep, Jar-in-Jar sentinel bundles for end users.
+    implementation "io.wispforest:owo-lib:${project.owo_version}"
+    include       "io.wispforest:owo-sentinel:${project.owo_version}"
+}
+
+processResources {
+    inputs.property 'version',           project.version
+    inputs.property 'minecraft_version', project.minecraft_version
+    inputs.property 'loader_version',    project.loader_version
+    filesMatching('fabric.mod.json') {
+        expand(
+            'version':           project.version,
+            'minecraft_version': project.minecraft_version,
+            'loader_version':    project.loader_version
+        )
+    }
+}
+
+// 26.1 requires Java 25. Foojay auto-provisions a matching JDK at build
+// time so users don't need to manually install JDK 25 themselves; Gradle
+// downloads + caches it under the user's gradle home.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+}
+
+jar {
+    from('LICENSE') {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}

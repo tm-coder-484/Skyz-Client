@@ -1,0 +1,648 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
+Fabric Loom: 1.15.5
+
+> Task :compileJava
+.\gradlew.bat : D:\tmaco0\My 
+Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\mixin\InGameHudMixin.java:6: error: cannot find 
+symbol
+At line:1 char:69
++ ... yz-client-latest"; .\gradlew.bat compileJava --no-daemon 2>&1 | Out-F ...
++                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (D:\tmaco0\My Do...not find symbol:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\mixin\InGameHudMixin.java:50: error: 
+cannot find symbol
+    private void skyz$render(GuiGraphics ctx, DeltaTracker tick, CallbackInfo ci) {
+                             ^
+  symbol:   class GuiGraphics
+  location: class InGameHudMixin
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\mixin\InGameHudOverlayMixin.java:4: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\mixin\InGameHudOverlayMixin.java:25: 
+error: cannot find symbol
+    private void skyz$suppressOverlay(GuiGraphics ctx, Identifier id, float opacity, CallbackInfo ci) {
+                                      ^
+  symbol:   class GuiGraphics
+  location: class InGameHudOverlayMixin
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzProgressScreen.java:6: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzProgressScreen.java:70: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzProgressScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzProgressScreen.java:77: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzProgressScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:5: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:96: 
+error: cannot find symbol
+    public static void render(GuiGraphics ctx, Minecraft client,
+                              ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:105: 
+error: cannot find symbol
+    private static void renderElement(GuiGraphics ctx, Minecraft client,
+                                      ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:161: 
+error: cannot find symbol
+    private static void drawValuePanel(GuiGraphics ctx, SkyzHudState.HudElementState el,
+                                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:175: 
+error: cannot find symbol
+    private static void renderFps(GuiGraphics ctx, Minecraft client,
+                                  ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:182: 
+error: cannot find symbol
+    private static void renderCps(GuiGraphics ctx, SkyzHudState.HudElementState el,
+                                  ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:188: 
+error: cannot find symbol
+    private static void renderCoordinates(GuiGraphics ctx, Minecraft client,
+                                          ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:201: 
+error: cannot find symbol
+    private static int drawLabelValue(GuiGraphics ctx, Font tr,
+                                      ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:209: 
+error: cannot find symbol
+    private static void renderBiome(GuiGraphics ctx, Minecraft client,
+                                    ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:217: 
+error: cannot find symbol
+    private static void renderSpeed(GuiGraphics ctx, Minecraft client,
+                                    ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:233: 
+error: cannot find symbol
+    private static void renderPing(GuiGraphics ctx, Minecraft client,
+                                   ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:269: 
+error: cannot find symbol
+    private static void renderReach(GuiGraphics ctx, Minecraft client,
+                                    ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:281: 
+error: cannot find symbol
+    private static void renderMemory(GuiGraphics ctx, SkyzHudState.HudElementState el,
+                                     ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:296: 
+error: cannot find symbol
+    private static void renderEntityCount(GuiGraphics ctx, Minecraft client,
+                                          ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:310: 
+error: cannot find symbol
+    private static void renderSessionTimer(GuiGraphics ctx, SkyzHudState.HudElementState el,
+                                           ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:320: 
+error: cannot find symbol
+    private static void renderBlockInfo(GuiGraphics ctx, Minecraft client,
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:359: 
+error: cannot find symbol
+    private static void drawIconBarPanel(GuiGraphics ctx, Font tr,
+                                         ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:382: 
+error: cannot find symbol
+    private static void renderHealthBar(GuiGraphics ctx, Minecraft client,
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:394: 
+error: cannot find symbol
+    private static void renderHungerBar(GuiGraphics ctx, Minecraft client,
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:405: 
+error: cannot find symbol
+    private static void renderSaturationBar(GuiGraphics ctx, Minecraft client,
+                                            ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:416: 
+error: cannot find symbol
+    private static void renderArmorBar(GuiGraphics ctx, Minecraft client,
+                                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:427: 
+error: cannot find symbol
+    private static void renderToolDurability(GuiGraphics ctx, Minecraft client,
+                                             ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:447: 
+error: cannot find symbol
+    private static void renderArmorSlot(GuiGraphics ctx, Minecraft client,
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:476: 
+error: cannot find symbol
+    private static void renderAttackCooldown(GuiGraphics ctx, Minecraft client,
+                                             ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:487: 
+error: cannot find symbol
+    private static void renderComboCounter(GuiGraphics ctx, SkyzHudState.HudElementState el,
+                                           ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:504: 
+error: cannot find symbol
+    private static void renderTotemPops(GuiGraphics ctx, SkyzHudState.HudElementState el,
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:515: 
+error: cannot find symbol
+    private static void renderTntTimer(GuiGraphics ctx, Minecraft client,
+                                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:545: 
+error: cannot find symbol
+    private static void renderEnemyInfo(GuiGraphics ctx, Minecraft client,
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:578: 
+error: cannot find symbol
+    private static void renderNearbyPlayers(GuiGraphics ctx, Minecraft client,
+                                            ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:657: 
+error: cannot find symbol
+    private static void renderCompass(GuiGraphics ctx, Minecraft client,
+                                      ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:697: 
+error: cannot find symbol
+    private static void renderPotions(GuiGraphics ctx, Minecraft client,
+                                      ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:728: 
+error: cannot find symbol
+    private static void renderCrosshair(GuiGraphics ctx, SkyzHudState.HudElementState el) {
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:738: 
+error: cannot find symbol
+    private static void renderKeystrokes(GuiGraphics ctx, Minecraft client,
+                                         ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:750: 
+error: cannot find symbol
+    private static void drawKey(GuiGraphics ctx, Minecraft client, String label,
+                                ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\render\SkyzHudRenderer.java:784: 
+error: cannot find symbol
+    private static void renderMinimap(GuiGraphics ctx, Minecraft client,
+                                      ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudRenderer
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzAddServerScreen.java:10: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzAddServerScreen.java:152: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzAddServerScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzAddServerScreen.java:157: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzAddServerScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzCosmeticsScreen.java:15: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:7: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzCosmeticsScreen.java:364: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzCosmeticsScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzCosmeticsScreen.java:369: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzCosmeticsScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\util\ParticleSystem.java:3: error: 
+cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\util\Toast.java:4: error: cannot 
+find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:143: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:148: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:179: 
+error: cannot find symbol
+    private void drawGradientBackground(GuiGraphics ctx) {
+                                        ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:199: 
+error: cannot find symbol
+    private void drawLogo(GuiGraphics ctx) {
+                          ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:249: 
+error: cannot find symbol
+    private void drawHudClock(GuiGraphics ctx) {
+                              ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:257: 
+error: cannot find symbol
+    private void drawSplash(GuiGraphics ctx) {
+                            ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:262: 
+error: cannot find symbol
+    private void drawDropZoneOverlay(GuiGraphics ctx) {
+                                     ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzTitleScreen.java:283: 
+error: cannot find symbol
+    private void drawMuteButton(GuiGraphics ctx, int mx, int my) {
+                                ^
+  symbol:   class GuiGraphics
+  location: class SkyzTitleScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\util\Toast.java:27: error: cannot 
+find symbol
+    public void render(GuiGraphics ctx, int screenW, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class Toast
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\util\ParticleSystem.java:75: error: 
+cannot find symbol
+    public void tick(GuiGraphics ctx, float delta) {
+                     ^
+  symbol:   class GuiGraphics
+  location: class ParticleSystem
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\util\ParticleSystem.java:110: error: 
+cannot find symbol
+    private void drawSoftMote(GuiGraphics ctx, int px, int py,
+                              ^
+  symbol:   class GuiGraphics
+  location: class ParticleSystem
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\util\ParticleSystem.java:137: error: 
+cannot find symbol
+    private void drawShimmer(GuiGraphics ctx, int px, int py,
+                             ^
+  symbol:   class GuiGraphics
+  location: class ParticleSystem
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzDeathScreen.java:8: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzDeathScreen.java:158: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzDeathScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzDeathScreen.java:164: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzDeathScreen
+D:\tmaco0\My 
+Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzDisconnectedScreen.java:8: error: 
+cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My 
+Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzDisconnectedScreen.java:98: error: 
+cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzDisconnectedScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzFriendsScreen.java:15: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzFriendsScreen.java:372: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzFriendsScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzFriendsScreen.java:377: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzFriendsScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzHudEditorScreen.java:18: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzHudEditorScreen.java:600: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudEditorScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzHudEditorScreen.java:605: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudEditorScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzHudEditorScreen.java:663: 
+error: cannot find symbol
+    private void drawElPreview(GuiGraphics ctx, SkyzHudState.HudElementState el, int mx, int my) {
+                               ^
+  symbol:   class GuiGraphics
+  location: class SkyzHudEditorScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzMessageScreen.java:6: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzMessageScreen.java:47: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzMessageScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzMessageScreen.java:55: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzMessageScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:3: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModsScreen.java:20: 
+error: cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:49: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:58: 
+error: cannot find symbol
+    private void drawNavBar(GuiGraphics ctx) {
+                            ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:72: 
+error: cannot find symbol
+    private void drawTabNav(GuiGraphics ctx, int mx, int my) {
+                            ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:88: 
+error: cannot find symbol
+    private void drawContent(GuiGraphics ctx, int mx, int my) {
+                             ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:98: 
+error: cannot find symbol
+    private void drawGeneral(GuiGraphics ctx, int x, int y, int w, int mx, int my) {
+                             ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:108: 
+error: cannot find symbol
+    private void drawSodiumSettings(GuiGraphics ctx, int x, int y, int w, int mx, int my) {
+                                    ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:118: 
+error: cannot find symbol
+    private void drawIrisSettings(GuiGraphics ctx, int x, int y, int w, int mx, int my) {
+                                  ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:128: 
+error: cannot find symbol
+    private void drawModMenuSettings(GuiGraphics ctx, int x, int y, int w, int mx, int my) {
+                                     ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:136: 
+error: cannot find symbol
+    private void drawEssentialSettings(GuiGraphics ctx, int x, int y, int w, int mx, int my) {
+                                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:148: 
+error: cannot find symbol
+    private void drawGenericSettings(GuiGraphics ctx, int x, int y, int w, int mx, int my) {
+                                     ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:158: 
+error: cannot find symbol
+    private void drawKeybinds(GuiGraphics ctx, int x, int y, int w) {
+                              ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:170: 
+error: cannot find symbol
+    private void drawAdvanced(GuiGraphics ctx, int x, int y, int w) {
+                              ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:175: 
+error: cannot find symbol
+    private void drawAbout(GuiGraphics ctx, int x, int y, int w) {
+                           ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:186: 
+error: cannot find symbol
+    private void drawSectionHeader(GuiGraphics ctx, int x, int y, String title) {
+                                   ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:191: 
+error: cannot find symbol
+    private void drawToggleRow(GuiGraphics ctx, int x, int y, int w,
+                               ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:207: 
+error: cannot find symbol
+    private void drawSliderRow(GuiGraphics ctx, int x, int y, int w,
+                               ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModConfigScreen.java:219: 
+error: cannot find symbol
+    private void drawInfoRow(GuiGraphics ctx, int x, int y, int w, String k, String v) {
+                             ^
+  symbol:   class GuiGraphics
+  location: class SkyzModConfigScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModsScreen.java:450: 
+error: cannot find symbol
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                                 ^
+  symbol:   class GuiGraphics
+  location: class SkyzModsScreen
+D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzModsScreen.java:455: 
+error: cannot find symbol
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+                       ^
+  symbol:   class GuiGraphics
+  location: class SkyzModsScreen
+D:\tmaco0\My 
+Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\screen\SkyzMultiplayerScreen.java:18: error: 
+cannot find symbol
+import net.minecraft.client.gui.GuiGraphics;
+                               ^
+  symbol:   class GuiGraphics
+  location: package net.minecraft.client.gui
+100 errors
+
+> Task :compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/tmaco0/My%20Documents/Downloads/skyz-client-latest/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler output below.
+  D:\tmaco0\My Documents\Downloads\skyz-client-latest\src\main\java\net\skyz\client\mixin\InGameHudMixin.java:6: 
+error: cannot find symbol
+  import net.minecraft.client.gui.GuiGraphics;
+                                 ^
+    symbol:   class GuiGraphics
+    location: package net.minecraft.client.gui
+  100 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 16s
+1 actionable task: 1 executed

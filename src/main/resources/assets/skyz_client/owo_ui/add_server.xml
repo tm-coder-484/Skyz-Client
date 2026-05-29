@@ -1,0 +1,116 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Add-Server screen — replaces vanilla AddServerScreen with the same
+      behavioural contract (Screen parent, Text title, BooleanConsumer cb,
+      ServerInfo info), styled to match the rest of the Skyz UI.
+
+      Centred card on a gradient backdrop; the card holds: title, name field,
+      address field, resource-pack-policy cycle button, and Done/Cancel.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+
+            <children>
+                <flow-layout id="card" direction="vertical">
+                    <sizing>
+                        <horizontal method="fixed">320</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <padding><all>18</all></padding>
+                    <gap>10</gap>
+                    <horizontal-alignment>center</horizontal-alignment>
+
+                    <children>
+                        <label id="lbl-title">
+                            <text>ADD SERVER</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+
+                        <!-- Server name -->
+                        <label>
+                            <text>Server name</text>
+                            <color>#9C8CD2FF</color>
+                            <margins><top>4</top></margins>
+                        </label>
+                        <flow-layout id="name-wrapper" direction="horizontal">
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                            <padding><horizontal>8</horizontal><vertical>2</vertical></padding>
+                            <vertical-alignment>center</vertical-alignment>
+                            <children>
+                                <text-box id="tb-name">
+                                    <sizing><horizontal method="fill">100</horizontal></sizing>
+                                </text-box>
+                            </children>
+                        </flow-layout>
+
+                        <!-- Server address -->
+                        <label>
+                            <text>Server address</text>
+                            <color>#9C8CD2FF</color>
+                            <margins><top>4</top></margins>
+                        </label>
+                        <flow-layout id="addr-wrapper" direction="horizontal">
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                            <padding><horizontal>8</horizontal><vertical>2</vertical></padding>
+                            <vertical-alignment>center</vertical-alignment>
+                            <children>
+                                <text-box id="tb-addr">
+                                    <sizing><horizontal method="fill">100</horizontal></sizing>
+                                </text-box>
+                            </children>
+                        </flow-layout>
+
+                        <!-- Resource pack policy (cycle button) -->
+                        <button id="btn-rp">
+                            <text>Resource Packs: Prompt</text>
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                            <margins><top>6</top></margins>
+                        </button>
+
+                        <!-- Action buttons -->
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                            <gap>8</gap>
+                            <margins><top>6</top></margins>
+                            <children>
+                                <button id="btn-cancel">
+                                    <text>CANCEL</text>
+                                    <sizing>
+                                        <horizontal method="fill">49</horizontal>
+                                        <vertical method="fixed">22</vertical>
+                                    </sizing>
+                                </button>
+                                <button id="btn-done">
+                                    <text>DONE</text>
+                                    <sizing>
+                                        <horizontal method="fill">49</horizontal>
+                                        <vertical method="fixed">22</vertical>
+                                    </sizing>
+                                </button>
+                            </children>
+                        </flow-layout>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

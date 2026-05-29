@@ -1,0 +1,19 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+// Foojay toolchain resolver — lets Gradle auto-download JDK 25 when the
+// user only has older JDKs installed locally. Without this, build fails
+// with "No matching toolchains" until the user installs JDK 25 manually.
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'skyz-client'

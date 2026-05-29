@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skyz Client — v2.5.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Raleway:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --sky-blue:#4ab8f0;--sky-light:#88d4f8;
+  --panel-bg:rgba(10,30,60,0.35);--panel-border:rgba(140,210,255,0.22);
+  --btn-bg:rgba(20,60,110,0.40);--btn-hover:rgba(40,100,170,0.55);
+  --btn-border:rgba(140,210,255,0.35);--btn-glow:rgba(100,190,255,0.4);
+  --text:rgba(220,240,255,0.95);--muted:rgba(160,210,255,0.55);
+  --card-bg:rgba(8,28,65,0.45);--card-border:rgba(140,210,255,0.14);
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Raleway',sans-serif;color:var(--text);cursor:default;}
+
+/* ─── BACKGROUND ─── */
+#bg{position:fixed;inset:0;z-index:0;background:linear-gradient(160deg,#050f2a 0%,#0a1f50 30%,#0d2860 50%,#0a1f50 70%,#050f2a 100%);}
+#bg-img{position:fixed;inset:0;z-index:1;background-size:cover;background-position:center;opacity:0.45;transition:opacity 0.8s;}
+.rays{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 80% 60% at 50% 30%,rgba(70,160,255,0.12) 0%,transparent 70%);}
+.overlay{position:fixed;inset:0;z-index:2;pointer-events:none;background:linear-gradient(to bottom,rgba(5,15,40,0.3) 0%,transparent 40%,transparent 60%,rgba(5,20,50,0.55) 100%);}
+#particles{position:fixed;inset:0;z-index:3;pointer-events:none;}
+
+/* ─── COMMON LAYOUT ─── */
+.page{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;}
+.page.active{display:flex;}
+
+/* ─── NAV BAR (sub-pages) ─── */
+.nav-bar{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 28px 0;flex-shrink:0;
+  animation:fadeDown 0.4s both;
+}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+.nav-logo{
+  font-family:'Cinzel',serif;font-weight:900;font-size:22px;letter-spacing:8px;
+  color:transparent;background:linear-gradient(135deg,#fff 0%,rgba(140,210,255,0.9) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 14px rgba(100,190,255,0.6));
+  text-transform:uppercase;text-decoration:none;cursor:pointer;
+}
+.nav-slash{color:rgba(140,210,255,0.3);font-size:16px;margin:0 2px;}
+.nav-title{font-family:'Raleway',sans-serif;font-weight:600;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:rgba(140,210,255,0.55);}
+.nav-back{
+  margin-left:auto;display:flex;align-items:center;gap:6px;
+  padding:8px 16px;background:rgba(10,40,80,0.3);border:1px solid rgba(140,210,255,0.18);
+  border-radius:10px;cursor:pointer;outline:none;backdrop-filter:blur(10px);
+  font-family:'Raleway',sans-serif;font-weight:600;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(180,225,255,0.6);transition:all 0.2s;
+}
+.nav-back:hover{background:rgba(20,70,130,0.45);border-color:rgba(140,210,255,0.4);color:#fff;}
+.nav-divider{width:calc(100% - 56px);margin:12px auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(140,210,255,0.15),transparent);flex-shrink:0;}
+
+/* ─── SHARED CONTENT AREA ─── */
+.content-area{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:18px 28px 16px;}
+
+/* ─── HUD BOTTOM ─── */
+.hud-bottom{
+  position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:200;
+  display:flex;align-items:center;gap:14px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:rgba(140,210,255,0.3);letter-spacing:2px;text-transform:uppercase;pointer-events:none;
+}
+.hud-dot{width:3px;height:3px;border-radius:50%;background:rgba(140,210,255,0.35);animation:hudPulse 2s ease-in-out infinite;}
+@keyframes hudPulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
+
+/* ─── TOAST ─── */
+.toast{
+  position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:rgba(5,20,50,0.9);border:1px solid rgba(140,210,255,0.3);border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 20px rgba(100,190,255,0.12);backdrop-filter:blur(14px);
+  padding:9px 20px;font-family:'Raleway',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.5px;
+  color:rgba(200,235,255,0.9);z-index:500;transition:transform 0.35s cubic-bezier(.22,1,.36,1),opacity 0.25s;
+  opacity:0;pointer-events:none;white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ─── SPLASH ─── */
+.splash{
+  position:fixed;top:22px;right:28px;z-index:20;font-family:'Raleway',sans-serif;font-weight:600;
+  font-size:11px;letter-spacing:1px;color:rgba(200,240,255,0.38);text-shadow:0 0 10px rgba(140,210,255,0.3);
+  pointer-events:none;animation:fadeIn 1s 1.2s both;
+}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+/* ═══════════════════════════════════════════════
+   MAIN MENU
+═══════════════════════════════════════════════ */
+#page-main{
+  position:fixed;inset:0;z-index:10;
+  display:none;align-items:center;justify-content:center;flex-direction:column;
+}
+#page-main.active{display:flex;}
+
+.main-inner{
+  display:flex;flex-direction:column;align-items:center;
+  animation:mainReveal 0.7s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes mainReveal{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+.logo-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:clamp(28px,4.5vh,52px);}
+.logo-text{
+  font-family:'Cinzel',serif;font-weight:900;font-size:clamp(80px,11vw,128px);letter-spacing:20px;line-height:1;
+  color:transparent;background:linear-gradient(160deg,rgba(255,255,255,1) 0%,rgba(160,225,255,0.95) 30%,rgba(80,180,255,0.9) 60%,rgba(140,210,255,1) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 32px rgba(100,190,255,0.7)) drop-shadow(0 0 64px rgba(80,160,255,0.35)) drop-shadow(0 4px 18px rgba(0,0,0,0.5));
+  text-transform:uppercase;
+}
+.logo-tagline{font-family:'Raleway',sans-serif;font-weight:300;font-size:clamp(11px,1.3vw,14px);letter-spacing:9px;text-transform:uppercase;color:rgba(180,230,255,0.45);margin-top:8px;}
+.logo-line{width:220px;height:1px;margin-top:14px;background:linear-gradient(90deg,transparent,rgba(140,210,255,0.65),transparent);position:relative;}
+.logo-line::after{content:'';position:absolute;top:-2.5px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:rgba(140,210,255,0.9);box-shadow:0 0 14px rgba(140,210,255,1),0 0 28px rgba(100,180,255,0.5);}
+
+.main-btns{display:flex;flex-direction:column;gap:8px;width:clamp(300px,30vw,380px);}
+.mc-btn{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;height:48px;padding:0 22px;
+  font-family:'Raleway',sans-serif;font-weight:600;font-size:clamp(13px,1.5vw,15px);letter-spacing:3px;text-transform:uppercase;
+  color:var(--text);background:var(--btn-bg);border:1px solid var(--btn-border);border-radius:14px;
+  cursor:pointer;outline:none;overflow:hidden;backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);
+  transition:all 0.25s ease;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(0,0,0,0.2),0 4px 20px rgba(0,0,0,0.3);
+  text-shadow:0 0 20px rgba(140,210,255,0.4),0 1px 2px rgba(0,0,0,0.5);
+}
+.mc-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,0.07) 50%,transparent 75%);transform:translateX(-100%);transition:transform 0.5s ease;}
+.mc-btn::after{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);}
+.mc-btn:hover{background:var(--btn-hover);border-color:rgba(140,220,255,0.6);color:#fff;transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 8px 30px rgba(0,0,0,0.4),0 0 24px rgba(100,190,255,0.22);}
+.mc-btn:hover::before{transform:translateX(100%);}
+.mc-btn:active{transform:translateY(0) scale(0.98);}
+.btn-icon{font-size:17px;flex-shrink:0;opacity:0.75;}
+.btn-row{display:flex;gap:8px;}
+.btn-row .mc-btn{flex:1;}
+.btn-spacer{height:4px;}
+.mc-btn.quit{border-color:rgba(255,140,140,0.18);color:rgba(255,180,180,0.75);}
+.mc-btn.quit:hover{background:rgba(120,30,40,0.45);border-color:rgba(255,120,120,0.45);box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 22px rgba(255,80,80,0.12);}
+
+.main-btns .mc-btn:nth-child(1){animation:fadeUp 0.55s 0.2s both;}
+.main-btns .mc-btn:nth-child(2){animation:fadeUp 0.55s 0.28s both;}
+.main-btns .mc-btn:nth-child(3){animation:fadeUp 0.55s 0.36s both;}
+.main-btns .mc-btn:nth-child(4){animation:fadeUp 0.55s 0.44s both;}
+.main-btns .btn-row{animation:fadeUp 0.55s 0.52s both;}
+.main-btns .btn-spacer+.mc-btn{animation:fadeUp 0.55s 0.6s both;}
+.main-btns .mc-btn:last-child{animation:fadeUp 0.55s 0.68s both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+/* ═══════════════════════════════════════════════
+   SHARED SCROLL CONTAINER
+═══════════════════════════════════════════════ */
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-right:4px;}
+.scroll-area::-webkit-scrollbar{width:4px;}
+.scroll-area::-webkit-scrollbar-track{background:rgba(255,255,255,0.03);}
+.scroll-area::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.2);border-radius:2px;}
+.scroll-area::-webkit-scrollbar-thumb:hover{background:rgba(140,210,255,0.38);}
+
+/* ─── TOOLBAR ─── */
+.toolbar{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-bottom:14px;}
+.search-box{
+  flex:1;max-width:360px;background:rgba(10,35,70,0.4);border:1px solid rgba(140,210,255,0.2);
+  border-radius:10px;padding:9px 14px;font-family:'Raleway',sans-serif;font-weight:500;font-size:13px;
+  color:rgba(200,235,255,0.9);outline:none;backdrop-filter:blur(12px);transition:border-color 0.2s;
+  caret-color:rgba(140,210,255,0.9);
+}
+.search-box::placeholder{color:rgba(140,210,255,0.22);}
+.search-box:focus{border-color:rgba(140,210,255,0.42);}
+.filter-btn{
+  padding:9px 16px;background:rgba(10,40,80,0.35);border:1px solid rgba(140,210,255,0.18);
+  border-radius:10px;cursor:pointer;outline:none;backdrop-filter:blur(12px);
+  font-family:'Raleway',sans-serif;font-weight:600;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(160,215,255,0.55);transition:all 0.18s;
+}
+.filter-btn:hover,.filter-btn.active{background:rgba(20,70,130,0.5);border-color:rgba(140,210,255,0.42);color:#fff;}
+.filter-btn.active{box-shadow:0 0 14px rgba(100,190,255,0.18);}
+.toolbar-count{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(140,210,255,0.3);letter-spacing:1px;}
+
+/* ─── CARD ─── */
+.card{
+  position:relative;padding:14px 16px;background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:14px;backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);
+  transition:all 0.22s ease;animation:cardIn 0.45s both;overflow:hidden;
+}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(140,210,255,0.04) 0%,transparent 60%);pointer-events:none;}
+.card:hover{background:rgba(12,42,90,0.55);border-color:rgba(140,210,255,0.28);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.38),0 0 18px rgba(100,190,255,0.08);}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* ─── TOGGLE ─── */
+.toggle{position:relative;width:44px;height:24px;cursor:pointer;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;border-radius:12px;background:rgba(20,50,90,0.6);border:1px solid rgba(140,210,255,0.15);transition:all 0.3s;}
+.toggle input:checked+.toggle-track{background:rgba(30,110,200,0.55);border-color:rgba(100,190,255,0.5);box-shadow:0 0 10px rgba(80,170,255,0.28);}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:rgba(120,180,255,0.5);transition:all 0.3s cubic-bezier(.22,1,.36,1);box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.toggle input:checked~.toggle-thumb{transform:translateX(20px);background:rgba(100,200,255,0.95);box-shadow:0 0 8px rgba(100,200,255,0.55),0 1px 4px rgba(0,0,0,0.3);}
+
+/* ─── CAT TAGS ─── */
+.cat-tag{display:inline-block;padding:2px 8px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;background:rgba(140,210,255,0.08);border:1px solid rgba(140,210,255,0.15);color:rgba(140,210,255,0.5);}
+.cat-tag.perf{background:rgba(80,220,160,0.08);border-color:rgba(80,220,160,0.2);color:rgba(80,220,160,0.6);}
+.cat-tag.visual{background:rgba(200,150,255,0.08);border-color:rgba(200,150,255,0.2);color:rgba(200,150,255,0.6);}
+.cat-tag.util{background:rgba(255,200,80,0.08);border-color:rgba(255,200,80,0.2);color:rgba(255,200,80,0.6);}
+.cat-tag.pvp{background:rgba(255,100,100,0.08);border-color:rgba(255,100,100,0.2);color:rgba(255,100,100,0.6);}
+.cat-tag.hud{background:rgba(100,200,255,0.08);border-color:rgba(100,200,255,0.2);color:rgba(100,200,255,0.6);}
+
+/* ─── ACTION BTN (small) ─── */
+.act-btn{
+  padding:6px 13px;background:rgba(10,40,80,0.4);border:1px solid rgba(140,210,255,0.2);border-radius:8px;
+  cursor:pointer;outline:none;font-family:'Raleway',sans-serif;font-weight:600;font-size:11px;letter-spacing:1.5px;
+  text-transform:uppercase;color:rgba(160,215,255,0.65);transition:all 0.18s;
+}
+.act-btn:hover{background:rgba(20,70,130,0.5);border-color:rgba(140,210,255,0.4);color:#fff;}
+.act-btn.primary{background:rgba(30,100,200,0.35);border-color:rgba(100,180,255,0.4);color:rgba(160,220,255,0.9);}
+.act-btn.primary:hover{background:rgba(40,120,220,0.5);border-color:rgba(120,200,255,0.55);color:#fff;box-shadow:0 0 16px rgba(80,160,255,0.2);}
+.act-btn.danger{border-color:rgba(255,100,100,0.2);color:rgba(255,160,160,0.65);}
+.act-btn.danger:hover{background:rgba(120,30,40,0.4);border-color:rgba(255,100,100,0.4);color:rgba(255,180,180,0.9);}
+
+/* ─── SECTION HEADER ─── */
+.section-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(140,210,255,0.3);margin-bottom:10px;margin-top:18px;padding-bottom:6px;border-bottom:1px solid rgba(140,210,255,0.07);}
+.section-title:first-child{margin-top:0;}
+
+/* ─── SLIDER ─── */
+.skyz-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:rgba(140,210,255,0.15);outline:none;}
+.skyz-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:rgba(100,190,255,0.9);cursor:pointer;box-shadow:0 0 8px rgba(100,190,255,0.5);}
+
+/* ═══════════════════════════════════════════════
+   SINGLEPLAYER
+═══════════════════════════════════════════════ */
+.world-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;}
+.world-card{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;
+  background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;
+  backdrop-filter:blur(14px);cursor:pointer;transition:all 0.2s;animation:cardIn 0.4s both;overflow:hidden;position:relative;
+}
+.world-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(140,210,255,0.04) 0%,transparent 60%);pointer-events:none;}
+.world-card:hover{background:rgba(12,42,90,0.55);border-color:rgba(140,210,255,0.28);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.35);}
+.world-icon{width:56px;height:56px;border-radius:10px;border:1px solid rgba(140,210,255,0.15);flex-shrink:0;object-fit:cover;background:rgba(20,60,110,0.5);display:flex;align-items:center;justify-content:center;font-size:26px;}
+.world-info{flex:1;min-width:0;}
+.world-name{font-weight:700;font-size:14px;color:rgba(220,240,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.world-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(120,190,255,0.42);letter-spacing:0.5px;margin-top:3px;}
+.world-mode{font-size:11px;font-weight:600;letter-spacing:1px;color:rgba(140,210,255,0.5);margin-top:4px;}
+.world-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.sp-create-area{display:flex;gap:10px;margin-bottom:14px;flex-shrink:0;}
+.sp-create-area .mc-btn{flex:1;height:42px;font-size:13px;}
+
+/* ═══════════════════════════════════════════════
+   MULTIPLAYER
+═══════════════════════════════════════════════ */
+.server-list{display:flex;flex-direction:column;gap:8px;}
+.server-card{
+  display:flex;align-items:center;gap:14px;padding:13px 18px;
+  background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;
+  backdrop-filter:blur(14px);cursor:pointer;transition:all 0.2s;animation:cardIn 0.4s both;position:relative;overflow:hidden;
+}
+.server-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(140,210,255,0.04) 0%,transparent 60%);pointer-events:none;}
+.server-card:hover{background:rgba(12,42,90,0.55);border-color:rgba(140,210,255,0.28);box-shadow:0 6px 22px rgba(0,0,0,0.35);}
+.server-icon{width:54px;height:54px;border-radius:10px;border:1px solid rgba(140,210,255,0.15);flex-shrink:0;background:rgba(20,60,110,0.5);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.server-info{flex:1;min-width:0;}
+.server-name{font-weight:700;font-size:14px;color:rgba(220,240,255,0.95);}
+.server-addr{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(120,190,255,0.4);margin-top:2px;}
+.server-desc{font-size:12px;color:rgba(160,210,255,0.55);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.server-ping{text-align:right;flex-shrink:0;}
+.ping-dot{width:8px;height:8px;border-radius:50%;margin:0 auto 3px;background:#4cfa87;}
+.ping-dot.med{background:#facc4c;}
+.ping-dot.high{background:#fa6c4c;}
+.ping-ms{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(140,210,255,0.4);}
+.ping-players{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(140,210,255,0.3);margin-top:2px;}
+
+/* ═══════════════════════════════════════════════
+   MODS
+═══════════════════════════════════════════════ */
+.mods-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
+.mod-card{display:flex;flex-direction:column;gap:10px;padding:14px 16px;}
+.mod-top{display:flex;align-items:flex-start;gap:10px;}
+.mod-icon-box{width:40px;height:40px;border-radius:10px;background:rgba(140,210,255,0.07);border:1px solid rgba(140,210,255,0.14);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.mod-info{flex:1;min-width:0;}
+.mod-name{font-weight:700;font-size:14px;color:rgba(220,240,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mod-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(120,190,255,0.42);letter-spacing:0.5px;margin-top:2px;}
+.mod-desc{font-size:12px;color:rgba(160,210,255,0.58);line-height:1.5;}
+.mod-footer{display:flex;align-items:center;justify-content:space-between;}
+.mod-footer-left{display:flex;align-items:center;gap:8px;}
+
+/* ═══════════════════════════════════════════════
+   OPTIONS
+═══════════════════════════════════════════════ */
+.opts-layout{display:grid;grid-template-columns:200px 1fr;gap:18px;flex:1;overflow:hidden;}
+.opts-nav{display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+.opts-nav-btn{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+  background:transparent;border:1px solid transparent;cursor:pointer;outline:none;
+  font-family:'Raleway',sans-serif;font-weight:600;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(160,215,255,0.5);transition:all 0.18s;text-align:left;
+}
+.opts-nav-btn:hover{background:rgba(10,40,80,0.35);border-color:rgba(140,210,255,0.18);color:rgba(200,235,255,0.8);}
+.opts-nav-btn.active{background:rgba(20,70,130,0.4);border-color:rgba(140,210,255,0.3);color:#fff;box-shadow:0 0 12px rgba(100,190,255,0.12);}
+.opts-nav-icon{font-size:15px;opacity:0.7;}
+.opts-panel{overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px;}
+.opts-panel::-webkit-scrollbar{width:4px;}
+.opts-panel::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+.opt-group{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px 18px;backdrop-filter:blur(14px);}
+.opt-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(140,210,255,0.05);}
+.opt-row:last-child{border-bottom:none;padding-bottom:0;}
+.opt-row:first-child{padding-top:0;}
+.opt-label{font-size:13px;font-weight:600;color:rgba(200,235,255,0.8);}
+.opt-sub{font-size:11px;color:rgba(140,200,255,0.4);margin-top:2px;}
+.opt-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(140,210,255,0.55);text-align:right;}
+.opt-right{display:flex;align-items:center;gap:10px;}
+.opt-select{background:rgba(10,40,80,0.5);border:1px solid rgba(140,210,255,0.2);border-radius:8px;padding:5px 10px;color:rgba(200,235,255,0.8);font-family:'Raleway',sans-serif;font-size:12px;outline:none;cursor:pointer;}
+.opt-select option{background:#0a1f50;}
+
+/* ═══════════════════════════════════════════════
+   SKYZ SETTINGS
+═══════════════════════════════════════════════ */
+.themes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+.theme-card{
+  border-radius:14px;overflow:hidden;cursor:pointer;border:2px solid transparent;
+  transition:all 0.2s;position:relative;aspect-ratio:16/9;
+  display:flex;align-items:flex-end;animation:cardIn 0.4s both;
+}
+.theme-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,0.4);}
+.theme-card.selected{border-color:rgba(100,200,255,0.7);box-shadow:0 0 20px rgba(80,170,255,0.35);}
+.theme-card::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 55%);pointer-events:none;}
+.theme-label{position:relative;z-index:1;width:100%;padding:8px 10px;font-weight:700;font-size:12px;letter-spacing:1px;color:#fff;}
+.theme-check{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:rgba(100,200,255,0.9);display:none;align-items:center;justify-content:center;font-size:11px;z-index:2;box-shadow:0 0 10px rgba(80,170,255,0.6);}
+.theme-card.selected .theme-check{display:flex;}
+
+.bg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:6px;}
+.bg-card{border-radius:12px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all 0.2s;position:relative;aspect-ratio:16/9;animation:cardIn 0.4s both;}
+.bg-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.4);}
+.bg-card.selected{border-color:rgba(100,200,255,0.7);box-shadow:0 0 18px rgba(80,170,255,0.3);}
+.bg-card::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 50%);pointer-events:none;}
+.bg-label{position:absolute;bottom:0;left:0;right:0;z-index:1;padding:7px 10px;font-weight:600;font-size:11px;letter-spacing:1px;color:#fff;}
+.bg-check{position:absolute;top:7px;right:7px;width:18px;height:18px;border-radius:50%;background:rgba(100,200,255,0.9);display:none;align-items:center;justify-content:center;font-size:10px;z-index:2;}
+.bg-card.selected .bg-check{display:flex;}
+
+.skyz-panel{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:18px;backdrop-filter:blur(14px);margin-bottom:12px;}
+.skyz-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(140,210,255,0.05);}
+.skyz-row:last-child{border-bottom:none;padding-bottom:0;}
+.skyz-row:first-child{padding-top:0;}
+
+/* ═══════════════════════════════════════════════
+   SKIN EDITOR
+═══════════════════════════════════════════════ */
+.skin-layout{display:grid;grid-template-columns:1fr 280px;gap:18px;flex:1;overflow:hidden;}
+.skin-preview-area{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.skin-dummy{font-size:160px;filter:drop-shadow(0 0 30px rgba(100,190,255,0.35));user-select:none;animation:skinFloat 3s ease-in-out infinite;}
+@keyframes skinFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+.skin-preview-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(140,210,255,0.3);margin-top:12px;}
+.skin-preview-info{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(140,210,255,0.25);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+.skin-panel{display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
+.skin-panel::-webkit-scrollbar{width:4px;}
+.skin-panel::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+.upload-zone{
+  border:2px dashed rgba(140,210,255,0.2);border-radius:12px;padding:24px;text-align:center;
+  cursor:pointer;transition:all 0.2s;background:rgba(10,40,80,0.2);
+}
+.upload-zone:hover{border-color:rgba(140,210,255,0.45);background:rgba(15,55,110,0.3);}
+.upload-zone-icon{font-size:32px;margin-bottom:8px;opacity:0.7;}
+.upload-zone-text{font-size:13px;font-weight:600;color:rgba(180,225,255,0.6);}
+.upload-zone-sub{font-size:11px;color:rgba(140,200,255,0.35);margin-top:4px;}
+.skin-option-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.skin-opt-btn{padding:10px;background:rgba(10,40,80,0.35);border:1px solid rgba(140,210,255,0.18);border-radius:10px;cursor:pointer;outline:none;font-family:'Raleway',sans-serif;font-weight:600;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(160,215,255,0.55);transition:all 0.18s;text-align:center;}
+.skin-opt-btn:hover{background:rgba(20,70,130,0.45);border-color:rgba(140,210,255,0.38);color:#fff;}
+.skin-opt-btn.active{background:rgba(30,100,200,0.35);border-color:rgba(100,180,255,0.45);color:rgba(160,220,255,0.9);}
+
+/* ═══════════════════════════════════════════════
+   COSMETICS
+═══════════════════════════════════════════════ */
+.cosmetics-layout{display:grid;grid-template-columns:1fr 260px;gap:18px;flex:1;overflow:hidden;}
+.cosmetics-preview{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+.cosmetics-side{display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
+.cosmetics-side::-webkit-scrollbar{width:4px;}
+.cosmetics-side::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+.cosm-tab-row{display:flex;gap:6px;flex-wrap:wrap;}
+.cosm-tab{padding:7px 14px;background:rgba(10,40,80,0.35);border:1px solid rgba(140,210,255,0.18);border-radius:9px;cursor:pointer;outline:none;font-family:'Raleway',sans-serif;font-weight:600;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(160,215,255,0.5);transition:all 0.18s;}
+.cosm-tab:hover{background:rgba(20,70,130,0.45);border-color:rgba(140,210,255,0.35);color:#fff;}
+.cosm-tab.active{background:rgba(30,100,200,0.35);border-color:rgba(100,180,255,0.45);color:rgba(160,220,255,0.9);}
+.skin-pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.skin-pick-card{border-radius:10px;padding:10px 8px;background:rgba(10,40,80,0.35);border:2px solid transparent;cursor:pointer;text-align:center;transition:all 0.18s;animation:cardIn 0.4s both;}
+.skin-pick-card:hover{background:rgba(20,70,130,0.45);border-color:rgba(140,210,255,0.25);}
+.skin-pick-card.selected{border-color:rgba(100,190,255,0.6);box-shadow:0 0 14px rgba(80,170,255,0.2);}
+.skin-pick-icon{font-size:30px;margin-bottom:4px;}
+.skin-pick-name{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(180,225,255,0.6);}
+
+/* ═══════════════════════════════════════════════
+   HUD EDITOR
+═══════════════════════════════════════════════ */
+#hud-editor-page{display:none;position:fixed;inset:0;z-index:10;flex-direction:column;}
+#hud-editor-page.active{display:flex;}
+.hud-layout{display:grid;grid-template-columns:190px 1fr 220px;flex:1;gap:0;overflow:hidden;}
+.hud-elements-panel,.hud-props-panel{
+  background:rgba(6,18,50,0.75);border-right:1px solid rgba(140,210,255,0.1);
+  display:flex;flex-direction:column;backdrop-filter:blur(16px);overflow-y:auto;
+}
+.hud-props-panel{border-right:none;border-left:1px solid rgba(140,210,255,0.1);}
+.hud-panel-title{font-family:'Raleway',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(140,210,255,0.6);padding:14px 16px 10px;border-bottom:1px solid rgba(140,210,255,0.08);}
+.hud-elem-row{
+  display:flex;align-items:center;justify-content:space-between;padding:9px 16px;
+  border-bottom:1px solid rgba(140,210,255,0.05);cursor:pointer;transition:background 0.15s;
+}
+.hud-elem-row:hover{background:rgba(140,210,255,0.05);}
+.hud-elem-row.selected{background:rgba(30,90,180,0.25);}
+.hud-elem-name{font-size:13px;font-weight:600;color:rgba(200,235,255,0.8);}
+.hud-elem-row.disabled .hud-elem-name{color:rgba(140,190,255,0.3);}
+.hud-canvas{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(20,60,140,0.3) 0%,transparent 70%);}
+.hud-canvas-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.35);font-size:22px;pointer-events:none;user-select:none;}
+.hud-widget{
+  position:absolute;padding:7px 10px;background:rgba(8,25,70,0.55);border:1px solid rgba(100,180,255,0.25);
+  border-radius:8px;backdrop-filter:blur(8px);cursor:move;user-select:none;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(180,225,255,0.85);
+  transition:border-color 0.15s,box-shadow 0.15s;min-width:60px;
+}
+.hud-widget:hover,.hud-widget.selected{border-color:rgba(100,190,255,0.55);box-shadow:0 0 16px rgba(80,160,255,0.2);}
+.hud-widget-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(120,180,255,0.4);display:block;margin-bottom:2px;}
+.hud-widget-value{font-size:13px;font-weight:500;color:rgba(200,235,255,0.9);}
+.hud-widget.health-bar{min-width:180px;padding:8px 12px;}
+.hud-hotbar{position:absolute;bottom:14%;left:50%;transform:translateX(-50%);display:flex;gap:4px;}
+.hud-slot{width:38px;height:38px;border:1px solid rgba(140,210,255,0.2);border-radius:6px;background:rgba(8,25,70,0.45);display:flex;align-items:center;justify-content:center;font-size:18px;transition:border-color 0.15s;}
+.hud-slot:first-child{border-color:rgba(140,210,255,0.5);box-shadow:0 0 10px rgba(80,160,255,0.25);}
+.health-bar-fill{width:100%;height:5px;background:rgba(80,200,255,0.15);border-radius:3px;margin-top:5px;overflow:hidden;}
+.health-bar-inner{height:100%;border-radius:3px;background:linear-gradient(90deg,rgba(80,220,140,0.8),rgba(60,200,120,0.9));box-shadow:0 0 6px rgba(60,200,120,0.4);}
+.hud-prop-row{padding:11px 16px;border-bottom:1px solid rgba(140,210,255,0.05);}
+.hud-prop-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(120,190,255,0.4);margin-bottom:5px;}
+.hud-prop-val{font-size:13px;font-weight:600;color:rgba(200,235,255,0.85);}
+.hud-prop-swatch{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;}
+.hud-color-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all 0.15s;}
+.hud-color-dot:hover,.hud-color-dot.active{border-color:rgba(255,255,255,0.6);transform:scale(1.15);}
+.hud-selected-label{padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(140,210,255,0.35);border-bottom:1px solid rgba(140,210,255,0.06);}
+
+/* ═══════════════════════════════════════════════
+   SHADERS
+═══════════════════════════════════════════════ */
+.shaders-layout{display:grid;grid-template-columns:1fr 280px;gap:18px;flex:1;overflow:hidden;}
+.shaders-main{display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+.shaders-main::-webkit-scrollbar{width:4px;}
+.shaders-main::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+.shader-card{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;
+  background:var(--card-bg);border:2px solid var(--card-border);border-radius:14px;
+  backdrop-filter:blur(14px);cursor:pointer;transition:all 0.2s;animation:cardIn 0.4s both;position:relative;overflow:hidden;
+}
+.shader-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(140,210,255,0.03) 0%,transparent 60%);pointer-events:none;}
+.shader-card:hover{border-color:rgba(140,210,255,0.28);transform:translateX(3px);}
+.shader-card.active{border-color:rgba(100,190,255,0.55);box-shadow:0 0 20px rgba(80,160,255,0.18);}
+.shader-thumb{width:80px;height:52px;border-radius:8px;flex-shrink:0;border:1px solid rgba(140,210,255,0.12);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.shader-info{flex:1;min-width:0;}
+.shader-name{font-weight:700;font-size:14px;color:rgba(220,240,255,0.95);}
+.shader-author{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(120,190,255,0.4);margin-top:2px;}
+.shader-desc{font-size:12px;color:rgba(160,210,255,0.55);margin-top:5px;}
+.shader-tags{display:flex;gap:5px;margin-top:6px;}
+.shader-active-badge{
+  padding:3px 10px;border-radius:20px;background:rgba(30,110,200,0.35);border:1px solid rgba(100,180,255,0.45);
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  color:rgba(140,210,255,0.8);white-space:nowrap;flex-shrink:0;align-self:center;
+}
+.shaders-side{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;backdrop-filter:blur(14px);overflow-y:auto;display:flex;flex-direction:column;}
+.shaders-side::-webkit-scrollbar{width:4px;}
+.shaders-side::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+.shader-settings-title{padding:14px 16px 10px;font-family:'Raleway',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(140,210,255,0.5);border-bottom:1px solid rgba(140,210,255,0.08);}
+.shader-setting-row{padding:12px 16px;border-bottom:1px solid rgba(140,210,255,0.05);}
+.shader-setting-row:last-child{border-bottom:none;}
+
+/* ═══════════════════════════════════════════════
+   FRIENDS
+═══════════════════════════════════════════════ */
+.friends-layout{display:grid;grid-template-columns:280px 1fr;gap:18px;flex:1;overflow:hidden;}
+.friends-list-panel{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;backdrop-filter:blur(14px);display:flex;flex-direction:column;overflow:hidden;}
+.friends-list-header{padding:14px 16px 10px;border-bottom:1px solid rgba(140,210,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.friends-list-title{font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:rgba(180,225,255,0.7);}
+.online-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(80,220,140,0.6);letter-spacing:1px;}
+.friends-scroll{flex:1;overflow-y:auto;padding:8px;}
+.friends-scroll::-webkit-scrollbar{width:4px;}
+.friends-scroll::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+.friend-row{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;
+  cursor:pointer;transition:background 0.15s;position:relative;
+}
+.friend-row:hover,.friend-row.active{background:rgba(30,80,160,0.25);}
+.friend-avatar{width:36px;height:36px;border-radius:50%;background:rgba(20,60,120,0.5);border:2px solid rgba(140,210,255,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;}
+.friend-online-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#4cfa87;border:2px solid rgba(6,18,50,0.8);}
+.friend-online-dot.offline{background:rgba(140,180,255,0.3);}
+.friend-online-dot.ingame{background:#4cd4fa;}
+.friend-info{flex:1;min-width:0;}
+.friend-name{font-weight:700;font-size:13px;color:rgba(220,240,255,0.9);}
+.friend-status{font-size:11px;color:rgba(140,200,255,0.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.friend-status.online{color:rgba(80,220,140,0.65);}
+.friend-status.ingame{color:rgba(80,210,255,0.65);}
+.friends-chat-panel{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;backdrop-filter:blur(14px);display:flex;flex-direction:column;overflow:hidden;}
+.friends-chat-header{padding:14px 18px 12px;border-bottom:1px solid rgba(140,210,255,0.08);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.chat-avatar-lg{width:42px;height:42px;border-radius:50%;background:rgba(20,60,120,0.5);border:2px solid rgba(140,210,255,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.chat-header-info{flex:1;}
+.chat-header-name{font-weight:700;font-size:15px;color:rgba(220,240,255,0.95);}
+.chat-header-sub{font-size:11px;color:rgba(140,200,255,0.4);margin-top:2px;}
+.chat-actions{display:flex;gap:8px;}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+.chat-msgs::-webkit-scrollbar{width:4px;}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+.chat-msg{display:flex;align-items:flex-start;gap:10px;}
+.chat-msg.me{flex-direction:row-reverse;}
+.msg-av{width:32px;height:32px;border-radius:50%;background:rgba(20,60,120,0.5);border:1px solid rgba(140,210,255,0.18);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.msg-bubble{max-width:70%;padding:9px 13px;border-radius:12px;background:rgba(12,42,90,0.6);border:1px solid rgba(140,210,255,0.12);}
+.chat-msg.me .msg-bubble{background:rgba(30,100,200,0.3);border-color:rgba(100,180,255,0.25);}
+.msg-name{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:rgba(140,210,255,0.4);margin-bottom:4px;}
+.msg-text{font-size:13px;color:rgba(200,235,255,0.85);line-height:1.4;}
+.msg-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(140,200,255,0.28);margin-top:4px;text-align:right;}
+.chat-input-area{padding:12px 18px;border-top:1px solid rgba(140,210,255,0.08);display:flex;gap:10px;flex-shrink:0;}
+.chat-input{flex:1;background:rgba(10,35,70,0.5);border:1px solid rgba(140,210,255,0.2);border-radius:10px;padding:9px 14px;font-family:'Raleway',sans-serif;font-size:13px;color:rgba(200,235,255,0.9);outline:none;caret-color:rgba(140,210,255,0.9);}
+.chat-input::placeholder{color:rgba(140,210,255,0.22);}
+.chat-input:focus{border-color:rgba(140,210,255,0.42);}
+.chat-send-btn{padding:9px 18px;background:rgba(30,100,200,0.4);border:1px solid rgba(100,180,255,0.4);border-radius:10px;cursor:pointer;font-family:'Raleway',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(160,220,255,0.9);transition:all 0.18s;outline:none;}
+.chat-send-btn:hover{background:rgba(40,120,220,0.55);border-color:rgba(120,200,255,0.55);color:#fff;}
+
+/* join-world card */
+.friend-world-card{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;
+  background:rgba(20,60,120,0.2);border:1px solid rgba(140,210,255,0.1);margin-bottom:10px;cursor:pointer;transition:all 0.18s;
+}
+.friend-world-card:hover{background:rgba(30,80,160,0.3);border-color:rgba(140,210,255,0.25);}
+.fwc-icon{font-size:24px;flex-shrink:0;}
+.fwc-info{flex:1;min-width:0;}
+.fwc-name{font-weight:700;font-size:13px;color:rgba(220,240,255,0.9);}
+.fwc-meta{font-size:11px;color:rgba(140,200,255,0.45);margin-top:2px;}
+
+/* ═══════════════════════════════════════════════
+   MOD CONFIG PAGE
+═══════════════════════════════════════════════ */
+.config-layout{display:grid;grid-template-columns:220px 1fr;gap:18px;flex:1;overflow:hidden;}
+.config-nav{display:flex;flex-direction:column;gap:4px;}
+.config-panel{overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+.config-panel::-webkit-scrollbar{width:4px;}
+.config-panel::-webkit-scrollbar-thumb{background:rgba(140,210,255,0.18);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<div id="bg-img"></div>
+<div class="rays"></div>
+<div class="overlay"></div>
+<canvas id="particles"></canvas>
+
+<div class="splash" id="splash">Look up. Fly higher.</div>
+<div class="toast" id="toast"></div>
+
+<div class="hud-bottom">
+  <span>Skyz Client</span>
+  <div class="hud-dot"></div>
+  <span>v2.5.0</span>
+  <div class="hud-dot"></div>
+  <span id="clock">--:--</span>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN MENU
+═══════════════════════════════════════════ -->
+<div id="page-main" class="page active">
+  <div class="main-inner">
+    <div class="logo-wrap">
+      <div class="logo-text">Skyz</div>
+      <div class="logo-tagline">Client &nbsp;·&nbsp; Java Edition &nbsp;·&nbsp; 1.21.11</div>
+      <div class="logo-line"></div>
+    </div>
+    <div class="main-btns">
+      <button class="mc-btn" onclick="nav('singleplayer')"><span class="btn-icon">🌍</span> Singleplayer</button>
+      <button class="mc-btn" onclick="nav('multiplayer')"><span class="btn-icon">◈</span> Multiplayer</button>
+      <button class="mc-btn" onclick="nav('mods')"><span class="btn-icon">🧩</span> Mods</button>
+      <div class="btn-row">
+        <button class="mc-btn" onclick="nav('options')"><span class="btn-icon">⚙</span> Options</button>
+        <button class="mc-btn" onclick="nav('skyz-settings')"><span class="btn-icon">✦</span> Skyz Settings</button>
+      </div>
+      <div class="btn-row">
+        <button class="mc-btn" onclick="nav('skin-editor')"><span class="btn-icon">🧍</span> Skin Editor</button>
+        <button class="mc-btn" onclick="nav('cosmetics')"><span class="btn-icon">✨</span> Cosmetics</button>
+      </div>
+      <div class="btn-row">
+        <button class="mc-btn" onclick="nav('hud-editor')"><span class="btn-icon">🎛</span> HUD Editor</button>
+        <button class="mc-btn" onclick="nav('shaders')"><span class="btn-icon">🌅</span> Shaders</button>
+      </div>
+      <button class="mc-btn" onclick="nav('friends')"><span class="btn-icon">👥</span> Friends</button>
+      <div class="btn-spacer"></div>
+      <button class="mc-btn quit" onclick="quitGame()"><span class="btn-icon">⊗</span> Quit Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SINGLEPLAYER
+═══════════════════════════════════════════ -->
+<div id="page-singleplayer" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Singleplayer</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area">
+    <div class="sp-create-area">
+      <button class="mc-btn primary act-btn" style="height:42px;flex:1;font-size:13px;" onclick="toast('Creating new world...')">
+        <span class="btn-icon">+</span> Create New World
+      </button>
+      <button class="mc-btn act-btn" style="height:42px;width:160px;font-size:12px;" onclick="toast('Import from file...')">
+        📁 Import World
+      </button>
+    </div>
+    <div class="toolbar">
+      <input class="search-box" placeholder="Search worlds..." oninput="filterWorlds(this.value)">
+      <button class="filter-btn active" data-wf="all" onclick="setWorldFilter('all',this)">All</button>
+      <button class="filter-btn" data-wf="survival" onclick="setWorldFilter('survival',this)">Survival</button>
+      <button class="filter-btn" data-wf="creative" onclick="setWorldFilter('creative',this)">Creative</button>
+      <span class="toolbar-count" id="world-count">6 worlds</span>
+    </div>
+    <div class="scroll-area">
+      <div class="world-grid" id="world-grid">
+        <!-- injected by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MULTIPLAYER
+═══════════════════════════════════════════ -->
+<div id="page-multiplayer" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Multiplayer</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area">
+    <div class="sp-create-area">
+      <button class="mc-btn act-btn" style="height:42px;flex:1;font-size:13px;" onclick="toast('Add server...')">
+        + Add Server
+      </button>
+      <button class="mc-btn act-btn" style="height:42px;width:180px;font-size:12px;" onclick="toast('Direct connect...')">
+        ⚡ Direct Connect
+      </button>
+    </div>
+    <div class="toolbar">
+      <input class="search-box" placeholder="Search servers...">
+      <button class="filter-btn active">All</button>
+      <button class="filter-btn">Favourites</button>
+      <button class="filter-btn">LAN</button>
+      <span class="toolbar-count" id="server-count">5 servers</span>
+    </div>
+    <div class="scroll-area">
+      <div class="server-list" id="server-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODS
+═══════════════════════════════════════════ -->
+<div id="page-mods" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Mods</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area">
+    <div class="toolbar">
+      <input class="search-box" placeholder="Search mods..." oninput="filterMods(this.value)">
+      <button class="filter-btn active" onclick="setModFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setModFilter('perf',this)">Performance</button>
+      <button class="filter-btn" onclick="setModFilter('visual',this)">Visual</button>
+      <button class="filter-btn" onclick="setModFilter('pvp',this)">PvP</button>
+      <button class="filter-btn" onclick="setModFilter('util',this)">Utility</button>
+      <span class="toolbar-count" id="mod-count"></span>
+    </div>
+    <div class="scroll-area">
+      <div class="mods-grid" id="mods-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MOD CONFIG (placeholder per-mod)
+═══════════════════════════════════════════ -->
+<div id="page-mod-config" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Mods</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title" id="mod-config-name">Config</span>
+    <button class="nav-back" onclick="nav('mods')">← Mods</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area">
+    <div class="config-layout">
+      <div class="config-nav">
+        <div class="section-title" style="margin-top:0;">Settings</div>
+        <button class="opts-nav-btn active" onclick="configTab(this,'config-general')">⚙ General</button>
+        <button class="opts-nav-btn" onclick="configTab(this,'config-keybinds')">⌨ Keybinds</button>
+        <button class="opts-nav-btn" onclick="configTab(this,'config-advanced')">🔬 Advanced</button>
+        <button class="opts-nav-btn" onclick="configTab(this,'config-about')">ℹ About</button>
+      </div>
+      <div class="config-panel" id="config-general">
+        <div class="opt-group">
+          <div class="section-title">General</div>
+          <div class="opt-row">
+            <div><div class="opt-label">Enabled</div><div class="opt-sub">Toggle this mod on or off</div></div>
+            <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+          </div>
+          <div class="opt-row">
+            <div><div class="opt-label">Render Mode</div><div class="opt-sub">How the mod is displayed</div></div>
+            <select class="opt-select"><option>Overlay</option><option>HUD</option><option>Hidden</option></select>
+          </div>
+          <div class="opt-row">
+            <div><div class="opt-label">Priority</div><div class="opt-sub">Processing priority level</div></div>
+            <div class="opt-right"><span class="opt-val">Normal</span><select class="opt-select"><option>Low</option><option selected>Normal</option><option>High</option></select></div>
+          </div>
+        </div>
+        <div class="opt-group">
+          <div class="section-title">Display</div>
+          <div class="opt-row">
+            <div><div class="opt-label">Scale</div><div class="opt-sub">UI element scale factor</div></div>
+            <div class="opt-right"><span class="opt-val">1.0×</span><input class="skyz-slider" type="range" min="50" max="200" value="100" style="width:120px;" oninput="this.previousElementSibling.textContent=(this.value/100).toFixed(1)+'×'"></div>
+          </div>
+          <div class="opt-row">
+            <div><div class="opt-label">Opacity</div><div class="opt-sub">Element transparency</div></div>
+            <div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="10" max="100" value="100" style="width:120px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div>
+          </div>
+          <div class="opt-row">
+            <div><div class="opt-label">Shadow</div></div>
+            <label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+          </div>
+        </div>
+        <div class="opt-group">
+          <div class="section-title">Behaviour</div>
+          <div class="opt-row">
+            <div><div class="opt-label">Show in F5</div></div>
+            <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+          </div>
+          <div class="opt-row">
+            <div><div class="opt-label">Show in Spectator</div></div>
+            <label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     OPTIONS
+═══════════════════════════════════════════ -->
+<div id="page-options" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Options</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area" style="flex-direction:row;gap:18px;padding-top:14px;">
+    <div class="opts-layout" style="flex:1;">
+      <div class="opts-nav" id="opts-nav">
+        <button class="opts-nav-btn active" onclick="optTab(this,'opt-video')"><span class="opts-nav-icon">🖥</span> Video</button>
+        <button class="opts-nav-btn" onclick="optTab(this,'opt-audio')"><span class="opts-nav-icon">🔊</span> Audio</button>
+        <button class="opts-nav-btn" onclick="optTab(this,'opt-controls')"><span class="opts-nav-icon">⌨</span> Controls</button>
+        <button class="opts-nav-btn" onclick="optTab(this,'opt-chat')"><span class="opts-nav-icon">💬</span> Chat</button>
+        <button class="opts-nav-btn" onclick="optTab(this,'opt-accessibility')"><span class="opts-nav-icon">♿</span> Accessibility</button>
+        <button class="opts-nav-btn" onclick="optTab(this,'opt-network')"><span class="opts-nav-icon">🌐</span> Network</button>
+        <button class="opts-nav-btn" onclick="optTab(this,'opt-resource')"><span class="opts-nav-icon">🎨</span> Resource Packs</button>
+        <button class="opts-nav-btn" onclick="optTab(this,'opt-language')"><span class="opts-nav-icon">🌍</span> Language</button>
+      </div>
+      <!-- Video -->
+      <div class="opts-panel" id="opt-video">
+        <div class="opt-group">
+          <div class="section-title">Graphics</div>
+          <div class="opt-row"><div><div class="opt-label">Graphics Quality</div></div><select class="opt-select"><option>Fast</option><option selected>Fancy</option><option>Fabulous</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Render Distance</div><div class="opt-sub">Chunks loaded around player</div></div><div class="opt-right"><span class="opt-val">12</span><input class="skyz-slider" type="range" min="2" max="32" value="12" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Max Framerate</div></div><select class="opt-select"><option>30</option><option>60</option><option>120</option><option selected>Unlimited</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">VSync</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">Fullscreen</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+        <div class="opt-group">
+          <div class="section-title">Details</div>
+          <div class="opt-row"><div><div class="opt-label">Smooth Lighting</div></div><select class="opt-select"><option>Off</option><option>Minimum</option><option selected>Maximum</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Clouds</div></div><select class="opt-select"><option>Off</option><option>Fast</option><option selected>Fancy</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Particles</div></div><select class="opt-select"><option>All</option><option selected>Decreased</option><option>Minimal</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Entity Shadows</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">FOV</div></div><div class="opt-right"><span class="opt-val">70°</span><input class="skyz-slider" type="range" min="30" max="110" value="70" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'°'"></div></div>
+        </div>
+      </div>
+      <!-- Audio (hidden by default) -->
+      <div class="opts-panel" id="opt-audio" style="display:none;">
+        <div class="opt-group">
+          <div class="section-title">Volume</div>
+          <div class="opt-row"><div><div class="opt-label">Master Volume</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="100" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Music</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="100" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Sound Effects</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="100" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Ambient / Environment</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="100" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Friendly Creatures</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="100" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Hostile Creatures</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="100" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Blocks</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="100" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+        </div>
+        <div class="opt-group">
+          <div class="section-title">Settings</div>
+          <div class="opt-row"><div><div class="opt-label">Directional Audio</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">Show Subtitles</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+      </div>
+      <div class="opts-panel" id="opt-controls" style="display:none;">
+        <div class="opt-group">
+          <div class="section-title">Movement</div>
+          <div class="opt-row"><div class="opt-label">Forward</div><div><button class="act-btn">W</button></div></div>
+          <div class="opt-row"><div class="opt-label">Back</div><div><button class="act-btn">S</button></div></div>
+          <div class="opt-row"><div class="opt-label">Left</div><div><button class="act-btn">A</button></div></div>
+          <div class="opt-row"><div class="opt-label">Right</div><div><button class="act-btn">D</button></div></div>
+          <div class="opt-row"><div class="opt-label">Jump</div><div><button class="act-btn">Space</button></div></div>
+          <div class="opt-row"><div class="opt-label">Sneak</div><div><button class="act-btn">Shift</button></div></div>
+          <div class="opt-row"><div class="opt-label">Sprint</div><div><button class="act-btn">Ctrl</button></div></div>
+        </div>
+        <div class="opt-group">
+          <div class="section-title">Mouse</div>
+          <div class="opt-row"><div><div class="opt-label">Sensitivity</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="0" max="200" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Invert Mouse</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">Raw Input</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+      </div>
+      <div class="opts-panel" id="opt-chat" style="display:none;">
+        <div class="opt-group">
+          <div class="section-title">Chat</div>
+          <div class="opt-row"><div><div class="opt-label">Chat Visibility</div></div><select class="opt-select"><option selected>Shown</option><option>Commands Only</option><option>Hidden</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Chat Scale</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="25" max="200" value="100" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Chat Width</div></div><div class="opt-right"><span class="opt-val">320px</span><input class="skyz-slider" type="range" min="100" max="640" value="320" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'px'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Text Background</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">Chat Timestamps</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">Filtered Chat</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+      </div>
+      <div class="opts-panel" id="opt-accessibility" style="display:none;">
+        <div class="opt-group">
+          <div class="section-title">Accessibility</div>
+          <div class="opt-row"><div><div class="opt-label">Narrator</div></div><select class="opt-select"><option selected>Off</option><option>All</option><option>Chat</option><option>System</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Monochrome Logo</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">UI Background Opacity</div></div><div class="opt-right"><span class="opt-val">50%</span><input class="skyz-slider" type="range" min="0" max="100" value="50" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Text Background Opacity</div></div><div class="opt-right"><span class="opt-val">50%</span><input class="skyz-slider" type="range" min="0" max="100" value="50" style="width:140px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+          <div class="opt-row"><div><div class="opt-label">Damage Tilt</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+      </div>
+      <div class="opts-panel" id="opt-network" style="display:none;">
+        <div class="opt-group">
+          <div class="section-title">Network</div>
+          <div class="opt-row"><div><div class="opt-label">Max Server Connections</div></div><select class="opt-select"><option>1</option><option selected>5</option><option>10</option><option>20</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Snooper Enabled</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row"><div><div class="opt-label">Server Ping Interval</div></div><select class="opt-select"><option selected>Auto</option><option>1s</option><option>5s</option><option>30s</option></select></div>
+        </div>
+      </div>
+      <div class="opts-panel" id="opt-resource" style="display:none;">
+        <div class="opt-group">
+          <div class="section-title">Active Packs</div>
+          <div class="opt-row"><div class="opt-label">Default</div><div><button class="act-btn">Remove</button></div></div>
+          <div class="opt-row"><div class="opt-label">Programmer Art</div><div><button class="act-btn danger">Remove</button></div></div>
+        </div>
+        <div class="opt-group">
+          <div class="section-title">Available</div>
+          <div class="opt-row"><div class="opt-label">No additional packs found</div></div>
+        </div>
+        <button class="act-btn primary" style="align-self:flex-start;">Open Pack Folder</button>
+      </div>
+      <div class="opts-panel" id="opt-language" style="display:none;">
+        <div class="opt-group">
+          <div class="section-title">Language</div>
+          <div class="opt-row"><div><div class="opt-label">Game Language</div></div><select class="opt-select"><option selected>English (AU)</option><option>English (US)</option><option>Deutsch</option><option>Español</option><option>Français</option><option>日本語</option></select></div>
+          <div class="opt-row"><div><div class="opt-label">Force Unicode Font</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SKYZ SETTINGS
+═══════════════════════════════════════════ -->
+<div id="page-skyz-settings" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Skyz Settings</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area">
+    <div class="scroll-area">
+      <div class="section-title">Theme</div>
+      <div class="themes-grid" id="themes-grid"></div>
+
+      <div class="section-title" style="margin-top:22px;">Background</div>
+      <div class="bg-grid" id="bg-grid"></div>
+
+      <div class="section-title" style="margin-top:22px;">Interface</div>
+      <div class="skyz-panel">
+        <div class="skyz-row">
+          <div><div class="opt-label">Particle Effects</div><div class="opt-sub">Floating motes in menus</div></div>
+          <label class="toggle"><input type="checkbox" checked id="toggle-particles" onchange="toggleParticles(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+        <div class="skyz-row">
+          <div><div class="opt-label">Blur Intensity</div></div>
+          <div class="opt-right"><span class="opt-val">20px</span><input class="skyz-slider" type="range" min="0" max="40" value="20" style="width:130px;" oninput="this.previousElementSibling.textContent=this.value+'px'"></div>
+        </div>
+        <div class="skyz-row">
+          <div><div class="opt-label">Animation Speed</div></div>
+          <select class="opt-select"><option>Slow</option><option selected>Normal</option><option>Fast</option><option>Instant</option></select>
+        </div>
+        <div class="skyz-row">
+          <div><div class="opt-label">Show Splash Text</div></div>
+          <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+        <div class="skyz-row">
+          <div><div class="opt-label">Glow Intensity</div></div>
+          <div class="opt-right"><span class="opt-val">70%</span><input class="skyz-slider" type="range" min="0" max="100" value="70" style="width:130px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:22px;">Client Info</div>
+      <div class="skyz-panel">
+        <div class="skyz-row"><div class="opt-label">Version</div><div class="opt-val">v2.5.0</div></div>
+        <div class="skyz-row"><div class="opt-label">Minecraft Version</div><div class="opt-val">1.21.11</div></div>
+        <div class="skyz-row"><div class="opt-label">Fabric Loader</div><div class="opt-val">0.16.10</div></div>
+        <div class="skyz-row"><div class="opt-label">Sodium</div><div class="opt-val">0.8.2</div></div>
+        <div class="skyz-row"><div class="opt-label">Iris Shaders</div><div class="opt-val">1.10.4</div></div>
+        <div class="skyz-row"><div class="opt-label">Mod Menu</div><div class="opt-val">17.0.0-β1</div></div>
+        <div class="skyz-row"><div class="opt-label">Active Mods</div><div class="opt-val">14</div></div>
+        <div class="skyz-row">
+          <div><div class="opt-label">Reset to Defaults</div><div class="opt-sub">Restore all Skyz settings</div></div>
+          <button class="act-btn danger" onclick="toast('Settings reset to defaults')">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SKIN EDITOR
+═══════════════════════════════════════════ -->
+<div id="page-skin-editor" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Skin Editor</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area" style="flex-direction:row;gap:18px;overflow:hidden;">
+    <div class="skin-layout">
+      <div class="skin-preview-area">
+        <div class="skin-dummy">🧍</div>
+        <div class="skin-preview-label">Preview</div>
+        <div class="skin-preview-info">Steve · 64×64 · Java 1.21.11</div>
+      </div>
+      <div class="skin-panel">
+        <div class="section-title" style="margin-top:0;">Upload Skin</div>
+        <div class="upload-zone" onclick="toast('Select skin file...')">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-text">Drag & drop or click to upload</div>
+          <div class="upload-zone-sub">PNG · 64×64 or 64×32</div>
+        </div>
+        <div class="section-title">Model</div>
+        <div class="skin-option-grid">
+          <button class="skin-opt-btn active" onclick="toggleSkinOpts(this,'model')">Classic (Steve)</button>
+          <button class="skin-opt-btn" onclick="toggleSkinOpts(this,'model')">Slim (Alex)</button>
+        </div>
+        <div class="section-title">Parts</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="opt-row" style="padding:6px 0;"><div class="opt-label">Head Layer</div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row" style="padding:6px 0;"><div class="opt-label">Body Layer</div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row" style="padding:6px 0;"><div class="opt-label">Arms Layer</div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="opt-row" style="padding:6px 0;"><div class="opt-label">Legs Layer</div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+        <div class="section-title">Actions</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="act-btn primary" onclick="toast('Skin saved!')">Save Skin</button>
+          <button class="act-btn" onclick="toast('Opening skin gallery...')">Gallery</button>
+          <button class="act-btn" onclick="toast('Skin reset to default')">Reset</button>
+          <button class="act-btn" onclick="toast('Uploading to Mojang...')">Upload to Mojang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     COSMETICS
+═══════════════════════════════════════════ -->
+<div id="page-cosmetics" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Cosmetics</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area" style="overflow:hidden;">
+    <div class="cosmetics-layout">
+      <div class="cosmetics-preview">
+        <div style="font-size:140px;filter:drop-shadow(0 0 30px rgba(100,190,255,0.35));animation:skinFloat 3s ease-in-out infinite;">🧍</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(140,210,255,0.3);margin-top:10px;">Preview</div>
+        <div style="position:absolute;bottom:16px;display:flex;gap:8px;">
+          <button class="act-btn" onclick="toast('Rotate left')">◁</button>
+          <button class="act-btn" onclick="toast('Play animation')">▷</button>
+          <button class="act-btn" onclick="toast('Rotate right')">▷</button>
+        </div>
+      </div>
+      <div class="cosmetics-side">
+        <div class="cosm-tab-row">
+          <button class="cosm-tab active" onclick="cosmTab(this,'cosm-skins')">Skins</button>
+          <button class="cosm-tab" onclick="cosmTab(this,'cosm-capes')">Capes</button>
+          <button class="cosm-tab" onclick="cosmTab(this,'cosm-wings')">Wings</button>
+          <button class="cosm-tab" onclick="cosmTab(this,'cosm-hats')">Hats</button>
+          <button class="cosm-tab" onclick="cosmTab(this,'cosm-trails')">Trails</button>
+        </div>
+        <div id="cosm-skins" class="skin-pick-grid">
+          <!-- injected by JS -->
+        </div>
+        <div id="cosm-capes" class="skin-pick-grid" style="display:none;"></div>
+        <div id="cosm-wings" class="skin-pick-grid" style="display:none;"></div>
+        <div id="cosm-hats" class="skin-pick-grid" style="display:none;"></div>
+        <div id="cosm-trails" class="skin-pick-grid" style="display:none;"></div>
+        <div style="margin-top:10px;">
+          <div class="section-title">Equipped</div>
+          <div class="skyz-panel" style="background:rgba(8,28,65,0.45);border:1px solid rgba(140,210,255,0.14);border-radius:14px;padding:12px 14px;">
+            <div class="opt-row" style="padding:5px 0;"><div class="opt-label">Skin</div><div class="opt-val">Steve</div></div>
+            <div class="opt-row" style="padding:5px 0;"><div class="opt-label">Cape</div><div class="opt-val">None</div></div>
+            <div class="opt-row" style="padding:5px 0;"><div class="opt-label">Wings</div><div class="opt-val">None</div></div>
+            <div class="opt-row" style="padding:5px 0;"><div class="opt-label">Hat</div><div class="opt-val">None</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     HUD EDITOR
+═══════════════════════════════════════════ -->
+<div id="page-hud-editor" class="page" id="hud-editor-page">
+  <div class="nav-bar" style="padding-bottom:10px;">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">HUD Editor</span>
+    <div style="margin-left:auto;display:flex;gap:10px;">
+      <button class="act-btn" onclick="toast('Layout reset')">Reset</button>
+      <button class="act-btn primary" onclick="toast('Layout saved!')">Save Layout</button>
+      <button class="nav-back" onclick="nav('main')" style="margin-left:4px;">← Back</button>
+    </div>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="hud-layout">
+    <!-- Left panel: elements -->
+    <div class="hud-elements-panel">
+      <div class="hud-panel-title">Elements</div>
+      <div id="hud-elem-list"></div>
+    </div>
+    <!-- Canvas -->
+    <div class="hud-canvas" id="hud-canvas">
+      <div class="hud-canvas-crosshair">+</div>
+      <!-- widgets injected by JS -->
+      <div class="hud-hotbar">
+        <div class="hud-slot">⚔</div>
+        <div class="hud-slot" style="font-size:14px;"></div>
+        <div class="hud-slot"></div>
+        <div class="hud-slot"></div>
+        <div class="hud-slot"></div>
+        <div class="hud-slot"></div>
+        <div class="hud-slot"></div>
+        <div class="hud-slot"></div>
+        <div class="hud-slot"></div>
+      </div>
+    </div>
+    <!-- Right panel: properties -->
+    <div class="hud-props-panel">
+      <div class="hud-panel-title">Properties</div>
+      <div class="hud-selected-label" id="hud-selected-label">— select an element —</div>
+      <div id="hud-props-content"></div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(140,210,255,0.2);letter-spacing:2px;text-transform:uppercase;flex-shrink:0;">
+    Drag to reposition &nbsp;•&nbsp; Click to select &nbsp;•&nbsp; Toggle elements on left panel
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SHADERS
+═══════════════════════════════════════════ -->
+<div id="page-shaders" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Shaders</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area">
+    <div class="shaders-layout">
+      <div class="shaders-main" id="shaders-main"></div>
+      <div class="shaders-side" id="shaders-side">
+        <div class="shader-settings-title">Shader Settings</div>
+        <div id="shader-settings-content" style="padding:12px 16px;color:rgba(140,210,255,0.35);font-size:12px;">Select a shader pack to configure.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FRIENDS
+═══════════════════════════════════════════ -->
+<div id="page-friends" class="page">
+  <div class="nav-bar">
+    <span class="nav-logo" onclick="nav('main')">Skyz</span>
+    <span class="nav-slash">/</span>
+    <span class="nav-title">Friends</span>
+    <button class="nav-back" onclick="nav('main')">← Back</button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="content-area">
+    <div class="friends-layout">
+      <!-- Left: friend list -->
+      <div class="friends-list-panel">
+        <div class="friends-list-header">
+          <span class="friends-list-title">Friends</span>
+          <span class="online-count" id="online-count">3 online</span>
+        </div>
+        <div style="padding:10px;">
+          <input class="search-box" placeholder="Search friends..." style="width:100%;max-width:none;font-size:12px;padding:8px 12px;">
+        </div>
+        <div class="friends-scroll" id="friends-list"></div>
+        <div style="padding:10px;border-top:1px solid rgba(140,210,255,0.08);">
+          <button class="act-btn primary" style="width:100%;text-align:center;" onclick="toast('Add friend...')">+ Add Friend</button>
+        </div>
+      </div>
+      <!-- Right: chat / info -->
+      <div class="friends-chat-panel" id="friends-chat-panel">
+        <!-- injected by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════ */
+let _tt;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+function nav(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target=document.getElementById('page-'+page);
+  if(target)target.classList.add('active');
+}
+
+function quitGame(){
+  toast('Saving world...');
+  setTimeout(()=>{
+    document.body.style.transition='opacity 0.6s';
+    document.body.style.opacity='0';
+    setTimeout(()=>{document.body.style.opacity='1';toast('(Demo — nothing to quit!)');document.body.style.transition='';},800);
+  },900);
+}
+
+/* clock */
+function tick(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});}
+tick();setInterval(tick,1000);
+
+/* splash */
+const splashes=['Look up. Fly higher.','Now running on 1.21.11 ✦','Sodium-powered frames ✦','Touch the clouds','Open skies ahead','The sky is not the limit','v2.5.0 — sharper than ever ✦','Iris shaders: activated ✦'];
+document.getElementById('splash').textContent=splashes[Math.floor(Math.random()*splashes.length)];
+
+/* opts tabs */
+function optTab(btn,panelId){
+  btn.closest('.opts-layout').querySelectorAll('.opts-nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  btn.closest('.opts-layout').querySelectorAll('.opts-panel').forEach(p=>p.style.display='none');
+  document.getElementById(panelId).style.display='flex';
+}
+
+/* config tabs */
+function configTab(btn,panelId){
+  document.querySelectorAll('#page-mod-config .opts-nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* cosmetics tabs */
+function cosmTab(btn,panelId){
+  document.querySelectorAll('.cosm-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['cosm-skins','cosm-capes','cosm-wings','cosm-hats','cosm-trails'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  const target=document.getElementById(panelId);
+  if(target)target.style.display='grid';
+}
+
+/* skin model toggle */
+function toggleSkinOpts(btn,group){
+  btn.closest('.skin-option-grid').querySelectorAll('.skin-opt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* particles */
+const canvas=document.getElementById('particles');
+const ctx=canvas.getContext('2d');
+let W,H,particlesOn=true;
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+class Mote{
+  constructor(){this.reset(true);}
+  reset(init=false){
+    this.x=Math.random()*W;this.y=init?Math.random()*H:H+4;
+    this.vy=-(0.1+Math.random()*0.25);this.vx=(Math.random()-0.5)*0.12;
+    this.r=0.4+Math.random()*1.4;this.life=0;this.maxLife=400+Math.random()*700;
+    this.type=Math.random()<0.6?'dust':'shimmer';
+  }
+  tick(){
+    this.x+=this.vx;this.y+=this.vy;this.life++;
+    if(this.life>=this.maxLife||this.y<-4)this.reset();
+    const t=this.life/this.maxLife;
+    return t<0.1?t/0.1:t>0.8?(1-t)/0.2:1;
+  }
+  draw(){
+    const a=this.tick();
+    if(this.type==='shimmer'){
+      ctx.save();ctx.globalAlpha=a*0.45;
+      const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.r*3);
+      g.addColorStop(0,'rgba(200,240,255,0.9)');g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(this.x,this.y,this.r*3,0,Math.PI*2);ctx.fill();ctx.restore();
+    }else{
+      ctx.save();ctx.globalAlpha=a*0.28;ctx.fillStyle='rgba(180,225,255,0.8)';
+      ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+  }
+}
+const motes=Array.from({length:80},()=>new Mote());
+function animate(){
+  ctx.clearRect(0,0,W,H);
+  if(particlesOn)motes.forEach(m=>m.draw());
+  requestAnimationFrame(animate);
+}
+animate();
+function toggleParticles(on){particlesOn=on;}
+
+/* ══════════════════════════════════════════════
+   SINGLEPLAYER DATA
+══════════════════════════════════════════════ */
+const worlds=[
+  {name:'Sky Survival',emoji:'🌤',date:'6 Apr 2026',mode:'Survival',seed:'-8192043',version:'1.21.11',cats:'survival'},
+  {name:'Creative Hub',emoji:'🏗',date:'5 Apr 2026',mode:'Creative',seed:'2847563',version:'1.21.11',cats:'creative'},
+  {name:'SkyBlock Island',emoji:'🏝',date:'3 Apr 2026',mode:'Survival',seed:'skyblock',version:'1.21.11',cats:'survival'},
+  {name:'Redstone Lab',emoji:'🔴',date:'1 Apr 2026',mode:'Creative',seed:'0',version:'1.21.11',cats:'creative'},
+  {name:'Hardcore Run',emoji:'💀',date:'28 Mar 2026',mode:'Hardcore',seed:'1337',version:'1.21.11',cats:'survival'},
+  {name:'Flat World',emoji:'📏',date:'20 Mar 2026',mode:'Creative',seed:'flat',version:'1.21.11',cats:'creative'},
+];
+let worldFilter='all';
+function renderWorlds(filter='all',search=''){
+  const grid=document.getElementById('world-grid');
+  const filtered=worlds.filter(w=>(filter==='all'||w.cats===filter)&&(w.name.toLowerCase().includes(search.toLowerCase())));
+  grid.innerHTML=filtered.map((w,i)=>`
+    <div class="world-card" style="animation-delay:${i*0.06}s" onclick="toast('Loading ${w.name}...')">
+      <div class="world-icon">${w.emoji}</div>
+      <div class="world-info">
+        <div class="world-name">${w.name}</div>
+        <div class="world-meta">${w.date} · ${w.version}</div>
+        <div class="world-mode">${w.mode} · Seed: ${w.seed}</div>
+      </div>
+      <div class="world-actions">
+        <button class="act-btn primary" onclick="event.stopPropagation();toast('Joining ${w.name}...')">Play</button>
+        <button class="act-btn" onclick="event.stopPropagation();toast('Editing ${w.name}...')">Edit</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('world-count').textContent=filtered.length+' world'+(filtered.length!==1?'s':'');
+}
+function setWorldFilter(f,btn){
+  worldFilter=f;
+  document.querySelectorAll('[data-wf]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderWorlds(f,document.querySelector('#page-singleplayer .search-box').value);
+}
+function filterWorlds(v){renderWorlds(worldFilter,v);}
+renderWorlds();
+
+/* ══════════════════════════════════════════════
+   MULTIPLAYER DATA
+══════════════════════════════════════════════ */
+const servers=[
+  {name:'Hypixel',addr:'mc.hypixel.net',emoji:'⚡',desc:'The largest Minecraft server — minigames, SkyBlock, BedWars & more',ping:42,pingClass:'',players:'102k / 150k'},
+  {name:'CubeCraft Games',addr:'play.cubecraft.net',emoji:'🟦',desc:'EggWars, SkyWars, Tower Defence and much more',ping:87,pingClass:'med',players:'8.2k / 30k'},
+  {name:'Mineplex',addr:'us.mineplex.com',emoji:'🌟',desc:'Cake Wars, Sky Wars, Super Paintball',ping:120,pingClass:'med',players:'1.4k / 10k'},
+  {name:'Wynncraft',addr:'play.wynncraft.com',emoji:'🗡',desc:'The largest MMORPG server — explore a vast fantasy world',ping:65,pingClass:'',players:'3.1k / 8k'},
+  {name:'Local LAN Server',addr:'192.168.1.100:25565',emoji:'🏠',desc:'My home server — vanilla survival',ping:4,pingClass:'',players:'1 / 8'},
+];
+const serverList=document.getElementById('server-list');
+serverList.innerHTML=servers.map((s,i)=>`
+  <div class="server-card" style="animation-delay:${i*0.07}s" onclick="toast('Connecting to ${s.name}...')">
+    <div class="server-icon">${s.emoji}</div>
+    <div class="server-info">
+      <div class="server-name">${s.name}</div>
+      <div class="server-addr">${s.addr}</div>
+      <div class="server-desc">${s.desc}</div>
+    </div>
+    <div class="server-ping">
+      <div class="ping-dot ${s.pingClass}"></div>
+      <div class="ping-ms">${s.ping}ms</div>
+      <div class="ping-players">${s.players}</div>
+    </div>
+  </div>
+`).join('');
+
+/* ══════════════════════════════════════════════
+   MODS DATA
+══════════════════════════════════════════════ */
+const modsList=[
+  {name:'Sodium',icon:'⚡',version:'0.8.2',author:'CaffeineMC',desc:'The fastest rendering optimisation mod for Minecraft. Built for Fabric 1.21.11 — delivers massive FPS gains with zero visual compromise.',cat:'perf',modrinth:'https://modrinth.com/mod/sodium'},
+  {name:'Iris Shaders',icon:'🌅',version:'1.10.4',author:'IrisShaders',desc:'Modern shader pack loader compatible with OptiFine packs. Bundled with Sodium for 1.21.11 — zero extra setup required.',cat:'visual',modrinth:'https://modrinth.com/mod/iris'},
+  {name:'Mod Menu',icon:'📋',version:'17.0.0-β1',author:'Prospector',desc:'Adds a searchable mod list screen accessible from the title menu. Integrates with all mods in this pack for in-game configuration.',cat:'util',modrinth:'https://modrinth.com/mod/modmenu'},
+  {name:'Lithium',icon:'🪨',version:'0.14.3',author:'CaffeineMC',desc:'General-purpose optimisation for server & client ticks — AI pathfinding, chunk loading, block collision and more.',cat:'perf',modrinth:'https://modrinth.com/mod/lithium'},
+  {name:'FerriteCore',icon:'🔩',version:'7.0.0',author:'malte0811',desc:'Reduces Minecraft\'s memory footprint by up to 40% through smarter block state and property caching.',cat:'perf',modrinth:'https://modrinth.com/mod/ferrite-core'},
+  {name:'EntityCulling',icon:'👁',version:'1.7.2',author:'tr7zw',desc:'Async raytracing to skip rendering of entities hidden behind solid blocks. Major FPS boost in crowded areas.',cat:'perf',modrinth:'https://modrinth.com/mod/entityculling'},
+  {name:'EssentialClient',icon:'🛠',version:'3.4.0',author:'Earthcomputer',desc:'Quality-of-life features inspired by Essentials — command shortcuts, waypoints, auto-reconnect, and configurable client rules.',cat:'util',modrinth:'https://modrinth.com/mod/essential-client'},
+  {name:'CPS Counter',icon:'🖱',version:'3.2.0',author:'SkyzDev',desc:'Displays left & right clicks-per-second on your HUD with configurable position, colour and style.',cat:'pvp',modrinth:''},
+  {name:'Keystrokes',icon:'⌨',version:'5.1.0',author:'SkyzDev',desc:'Visualise your W/A/S/D and mouse clicks in real-time with a stylish, fully customisable overlay.',cat:'pvp',modrinth:''},
+  {name:'Crosshair Mod',icon:'⊕',version:'2.4.0',author:'SkyzDev',desc:'Customise your crosshair with dozens of styles, colours, sizes, and per-weapon profiles.',cat:'pvp',modrinth:''},
+  {name:'BetterF3',icon:'ℹ',version:'8.0.0',author:'TreyRuffy',desc:'Replaces the default F3 debug screen with a colour-coded, fully configurable info display.',cat:'util',modrinth:'https://modrinth.com/mod/betterf3'},
+  {name:'Inventory HUD+',icon:'🎒',version:'3.5.0',author:'Giselbaer',desc:'Shows your inventory, armour durability and potion effects on your HUD while in-game.',cat:'hud',modrinth:'https://modrinth.com/mod/inventoryhud'},
+  {name:'Zoom Mod',icon:'🔍',version:'4.1.0',author:'SkyzDev',desc:'OptiFine-style zoom keybind with smooth scroll-to-zoom and cinematic camera transitions.',cat:'util',modrinth:''},
+  {name:'Smooth Swapping',icon:'🔄',version:'0.9.2',author:'Schauweg',desc:'Smoothly animates items when moved between inventory slots — clean and satisfying.',cat:'visual',modrinth:'https://modrinth.com/mod/smooth-swapping'},
+];
+let activeModFilter='all';
+function renderMods(filter=activeModFilter,search=''){
+  const grid=document.getElementById('mods-grid');
+  const filtered=modsList.filter(m=>(filter==='all'||m.cat===filter)&&(m.name.toLowerCase().includes(search.toLowerCase())||m.desc.toLowerCase().includes(search.toLowerCase())));
+  grid.innerHTML=filtered.map((m,i)=>`
+    <div class="card mod-card" style="animation-delay:${i*0.04}s">
+      <div class="mod-top">
+        <div class="mod-icon-box">${m.icon}</div>
+        <div class="mod-info">
+          <div class="mod-name">${m.name}</div>
+          <div class="mod-meta">v${m.version} · ${m.author}</div>
+        </div>
+        <label class="toggle" style="margin-left:auto;flex-shrink:0;"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="mod-desc">${m.desc}</div>
+      <div class="mod-footer">
+        <div class="mod-footer-left">
+          <span class="cat-tag ${m.cat==='hud'?'hud':m.cat}">${m.cat==='perf'?'Performance':m.cat==='visual'?'Visual':m.cat==='pvp'?'PvP':m.cat==='hud'?'HUD':'Utility'}</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          ${m.modrinth?`<button class="act-btn" onclick="event.stopPropagation();toast('Opening Modrinth page...')">↗ Modrinth</button>`:''}
+          <button class="act-btn" onclick="openModConfig('${m.name}')">⚙ Config</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('mod-count').textContent=filtered.length+' mod'+(filtered.length!==1?'s':'');
+}
+function setModFilter(f,btn){
+  activeModFilter=f;
+  document.querySelectorAll('#page-mods .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMods(f,document.querySelector('#page-mods .search-box').value);
+}
+function filterMods(v){renderMods(activeModFilter,v);}
+function openModConfig(name){
+  document.getElementById('mod-config-name').textContent=name;
+  // Populate general panel with mod-specific settings
+  const general=document.getElementById('config-general');
+  const modDefs={
+    'Sodium':`
+      <div class="opt-group"><div class="section-title">Rendering</div>
+        <div class="opt-row"><div><div class="opt-label">Graphics Backend</div><div class="opt-sub">Sodium 0.8.2 — Fabric 1.21.11</div></div><select class="opt-select"><option selected>OpenGL (Recommended)</option><option>OpenGL (Compat)</option></select></div>
+        <div class="opt-row"><div><div class="opt-label">Chunk Culling</div><div class="opt-sub">Skip rendering off-screen chunks</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Fog Occlusion</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Compact Vertex Format</div><div class="opt-sub">Reduces VRAM usage</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      </div>
+      <div class="opt-group"><div class="section-title">Performance</div>
+        <div class="opt-row"><div><div class="opt-label">CPU Render-Ahead Limit</div></div><div class="opt-right"><span class="opt-val">5</span><input class="skyz-slider" type="range" min="1" max="9" value="5" style="width:120px;" oninput="this.previousElementSibling.textContent=this.value"></div></div>
+        <div class="opt-row"><div><div class="opt-label">Sort Behaviour</div></div><select class="opt-select"><option selected>Defer to Iris</option><option>Always</option><option>Never</option></select></div>
+      </div>`,
+    'Iris Shaders':`
+      <div class="opt-group"><div class="section-title">Iris 1.10.4 — 1.21.11</div>
+        <div class="opt-row"><div><div class="opt-label">Shaders Enabled</div><div class="opt-sub">Toggle all shader effects</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Active Shader Pack</div></div><select class="opt-select"><option selected>Complementary Reimagined</option><option>BSL Shaders</option><option>Sildur's Vibrant</option><option>Rethinking Voxels</option><option>(none)</option></select></div>
+        <div class="opt-row"><div><div class="opt-label">Shadow Distance</div></div><div class="opt-right"><span class="opt-val">128</span><input class="skyz-slider" type="range" min="32" max="256" value="128" style="width:120px;" oninput="this.previousElementSibling.textContent=this.value"></div></div>
+        <div class="opt-row"><div><div class="opt-label">Max Shadow Render Distance</div></div><div class="opt-right"><span class="opt-val">32</span><input class="skyz-slider" type="range" min="8" max="64" value="32" style="width:120px;" oninput="this.previousElementSibling.textContent=this.value"></div></div>
+      </div>
+      <div class="opt-group"><div class="section-title">Compatibility</div>
+        <div class="opt-row"><div><div class="opt-label">Sodium Integration</div><div class="opt-sub">Required — do not disable</div></div><label class="toggle"><input type="checkbox" checked disabled><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Entity Shadows</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      </div>`,
+    'Mod Menu':`
+      <div class="opt-group"><div class="section-title">Mod Menu 17.0.0-β1 — 1.21.11</div>
+        <div class="opt-row"><div><div class="opt-label">Sort Mods By</div></div><select class="opt-select"><option selected>Name</option><option>Download Count</option><option>Last Updated</option></select></div>
+        <div class="opt-row"><div><div class="opt-label">Show Library Mods</div><div class="opt-sub">Show API/library mods in list</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Show Mod Update Badges</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Config Buttons</div><div class="opt-sub">Show ⚙ config icon per mod</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      </div>`,
+    'EssentialClient':`
+      <div class="opt-group"><div class="section-title">EssentialClient 3.4.0</div>
+        <div class="opt-row"><div><div class="opt-label">Auto Reconnect</div><div class="opt-sub">Rejoin server on disconnect</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Reconnect Delay (s)</div></div><div class="opt-right"><span class="opt-val">5</span><input class="skyz-slider" type="range" min="1" max="30" value="5" style="width:120px;" oninput="this.previousElementSibling.textContent=this.value"></div></div>
+        <div class="opt-row"><div><div class="opt-label">Waypoints</div><div class="opt-sub">In-world waypoint markers</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Command Shortcuts</div><div class="opt-sub">Quick-access command aliases</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      </div>
+      <div class="opt-group"><div class="section-title">Client Rules</div>
+        <div class="opt-row"><div><div class="opt-label">Highlight Loot Chests</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Show Ping in Tab List</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        <div class="opt-row"><div><div class="opt-label">Disable Narrator Hotkey</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      </div>`,
+  };
+  general.innerHTML = modDefs[name] || `
+    <div class="opt-group"><div class="section-title">General</div>
+      <div class="opt-row"><div><div class="opt-label">Enabled</div><div class="opt-sub">Toggle this mod on or off</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="opt-row"><div><div class="opt-label">Render Mode</div><div class="opt-sub">How the mod is displayed</div></div><select class="opt-select"><option>Overlay</option><option>HUD</option><option>Hidden</option></select></div>
+    </div>
+    <div class="opt-group"><div class="section-title">Display</div>
+      <div class="opt-row"><div><div class="opt-label">Scale</div></div><div class="opt-right"><span class="opt-val">1.0×</span><input class="skyz-slider" type="range" min="50" max="200" value="100" style="width:120px;" oninput="this.previousElementSibling.textContent=(this.value/100).toFixed(1)+'×'"></div></div>
+      <div class="opt-row"><div><div class="opt-label">Opacity</div></div><div class="opt-right"><span class="opt-val">100%</span><input class="skyz-slider" type="range" min="10" max="100" value="100" style="width:120px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+      <div class="opt-row"><div><div class="opt-label">Shadow</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    </div>
+    <div class="opt-group"><div class="section-title">Behaviour</div>
+      <div class="opt-row"><div><div class="opt-label">Show in F5</div></div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="opt-row"><div><div class="opt-label">Show in Spectator</div></div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    </div>`;
+  nav('mod-config');
+}
+renderMods();
+
+/* ══════════════════════════════════════════════
+   SKYZ SETTINGS – THEMES & BACKGROUNDS
+══════════════════════════════════════════════ */
+const themes=[
+  {name:'Sky Blue',gradient:'linear-gradient(135deg,#0a1f50,#1a5fa0)',selected:true},
+  {name:'Midnight',gradient:'linear-gradient(135deg,#050510,#1a0a35)'},
+  {name:'Aurora',gradient:'linear-gradient(135deg,#051a20,#0a4a3a)'},
+  {name:'Crimson',gradient:'linear-gradient(135deg,#200510,#5a0a1a)'},
+  {name:'Amber',gradient:'linear-gradient(135deg,#201205,#6a3a00)'},
+  {name:'Sakura',gradient:'linear-gradient(135deg,#200a2a,#6a1a4a)'},
+];
+const themesGrid=document.getElementById('themes-grid');
+themesGrid.innerHTML=themes.map((t,i)=>`
+  <div class="theme-card ${t.selected?'selected':''}" style="background:${t.gradient};animation-delay:${i*0.06}s" onclick="selectTheme(this,'${t.name}')">
+    <div class="theme-check">✓</div>
+    <div class="theme-label">${t.name}</div>
+  </div>
+`).join('');
+function selectTheme(el,name){
+  document.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  toast('Theme set: '+name);
+}
+
+const backgrounds=[
+  {name:'Anime Sky',emoji:'🌤',gradient:'linear-gradient(160deg,#1a3a8a,#4a90d9,#88c9f8)',selected:true},
+  {name:'Nether',emoji:'🔥',gradient:'linear-gradient(160deg,#3a0a00,#8a2a00,#ff6a00)'},
+  {name:'The End',emoji:'🟣',gradient:'linear-gradient(160deg,#050020,#1a0a40,#8a4aff)'},
+  {name:'Ocean',emoji:'🌊',gradient:'linear-gradient(160deg,#001830,#003a70,#0077aa)'},
+  {name:'Meadow',emoji:'🌿',gradient:'linear-gradient(160deg,#0a2a0a,#1a6a1a,#4aaa4a)'},
+  {name:'Cave',emoji:'🪨',gradient:'linear-gradient(160deg,#0a0a0a,#2a1a00,#4a3a2a)'},
+  {name:'Overworld Dawn',emoji:'🌅',gradient:'linear-gradient(160deg,#101020,#3a2a60,#f0a040)'},
+  {name:'Starfield',emoji:'⭐',gradient:'linear-gradient(160deg,#000010,#050530,#1a1a6a)'},
+];
+const bgGrid=document.getElementById('bg-grid');
+bgGrid.innerHTML=backgrounds.map((b,i)=>`
+  <div class="bg-card ${b.selected?'selected':''}" style="background:${b.gradient};animation-delay:${i*0.05}s" onclick="selectBg(this,'${b.name}','${b.gradient}')">
+    <div class="bg-check">✓</div>
+    <div class="bg-label">${b.emoji} ${b.name}</div>
+  </div>
+`).join('');
+function selectBg(el,name,gradient){
+  document.querySelectorAll('.bg-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('bg-img').style.background=gradient;
+  document.getElementById('bg-img').style.opacity='0.55';
+  toast('Background: '+name);
+}
+
+/* ══════════════════════════════════════════════
+   COSMETICS DATA
+══════════════════════════════════════════════ */
+const skinPickData={
+  'cosm-skins':[{icon:'🧍',name:'Steve',sel:true},{icon:'🧍‍♀️',name:'Alex'},{icon:'🥷',name:'Ninja'},{icon:'🤺',name:'Knight'},{icon:'🧙',name:'Wizard'},{icon:'🦸',name:'Hero'}],
+  'cosm-capes':[{icon:'🟦',name:'OptiFine',sel:true},{icon:'⭐',name:'Minecon'},{icon:'🎁',name:'Holiday'},{icon:'🏳',name:'None'}],
+  'cosm-wings':[{icon:'🦋',name:'Butterfly'},{icon:'🔥',name:'Flame'},{icon:'👼',name:'Angel',sel:true},{icon:'😈',name:'Dark'}],
+  'cosm-hats':[{icon:'🎩',name:'Top Hat'},{icon:'🪖',name:'Helmet'},{icon:'👑',name:'Crown',sel:true},{icon:'🎓',name:'Grad'}],
+  'cosm-trails':[{icon:'✨',name:'Sparkle',sel:true},{icon:'🌊',name:'Ocean'},{icon:'🔥',name:'Fire'},{icon:'❄',name:'Ice'}],
+};
+Object.keys(skinPickData).forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.innerHTML=skinPickData[id].map(s=>`
+    <div class="skin-pick-card ${s.sel?'selected':''}" onclick="selectCosmetic(this,'${id}','${s.name}')">
+      <div class="skin-pick-icon">${s.icon}</div>
+      <div class="skin-pick-name">${s.name}</div>
+    </div>
+  `).join('');
+});
+function selectCosmetic(el,group,name){
+  document.querySelectorAll('#'+group+' .skin-pick-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  toast(name+' equipped!');
+}
+
+/* ══════════════════════════════════════════════
+   HUD EDITOR
+══════════════════════════════════════════════ */
+const hudElements=[
+  {id:'hud-cps',name:'CPS',enabled:true,x:12,y:12,label:'CPS',value:'12.4'},
+  {id:'hud-fps',name:'FPS',enabled:true,x:12,y:70,label:'FPS',value:'244'},
+  {id:'hud-coords',name:'Coords',enabled:true,x:12,y:128,label:'COORDS',value:'X 248  Y 64  Z -391'},
+  {id:'hud-ping',name:'Ping',enabled:true,x:'right',y:12,label:'PING',value:'38 ms'},
+  {id:'hud-armor',name:'Armor',enabled:true,x:'right',y:70,label:'ARMOR',value:'18 pts'},
+  {id:'hud-sat',name:'Saturation',enabled:true,x:'right',y:128,label:'SATURATION',value:'14.2'},
+  {id:'hud-potion',name:'Potion FX',enabled:true,x:'center',y:12,label:'POTION FX',value:'Speed II · Strength I',wide:true},
+  {id:'hud-health',name:'Health',enabled:true,x:'center-bot',y:0,label:'HEALTH',value:'20',bar:true},
+  {id:'hud-kdr',name:'Killstreak',enabled:false,x:12,y:210,label:'STREAK',value:'7'},
+  {id:'hud-clock2',name:'Clock',enabled:false,x:'right',y:190,label:'TIME',value:'14:32'},
+];
+let selectedHud=null;
+
+function buildHUD(){
+  const list=document.getElementById('hud-elem-list');
+  const canvas=document.getElementById('hud-canvas');
+
+  // remove old widgets
+  canvas.querySelectorAll('.hud-widget').forEach(w=>w.remove());
+
+  list.innerHTML=hudElements.map(e=>`
+    <div class="hud-elem-row ${e.enabled?'':'disabled'} ${selectedHud===e.id?'selected':''}" onclick="selectHudElem('${e.id}')">
+      <span class="hud-elem-name">${e.name}</span>
+      <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" ${e.enabled?'checked':''} onchange="toggleHudElem('${e.id}',this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>
+  `).join('');
+
+  hudElements.filter(e=>e.enabled).forEach(e=>{
+    const w=document.createElement('div');
+    w.className='hud-widget'+(e.bar?' health-bar':'')+(selectedHud===e.id?' selected':'');
+    w.id='widget-'+e.id;
+    w.innerHTML=`<span class="hud-widget-label">${e.label}</span><span class="hud-widget-value">${e.value}</span>`+(e.bar?`<div class="health-bar-fill"><div class="health-bar-inner" style="width:85%"></div></div>`:'');
+
+    // position
+    if(e.x==='right'){w.style.right=(10)+'px';w.style.top=e.y+'px';}
+    else if(e.x==='center'){w.style.left='50%';w.style.transform='translateX(-50%)';w.style.top=e.y+'px';}
+    else if(e.x==='center-bot'){w.style.left='50%';w.style.transform='translateX(-50%)';w.style.bottom='90px';}
+    else{w.style.left=e.x+'px';w.style.top=e.y+'px';}
+
+    w.addEventListener('click',()=>selectHudElem(e.id));
+    makeDraggable(w,e);
+    canvas.appendChild(w);
+  });
+}
+
+function selectHudElem(id){
+  selectedHud=id;
+  const e=hudElements.find(h=>h.id===id);
+  document.querySelectorAll('.hud-elem-row').forEach(r=>r.classList.remove('selected'));
+  const row=document.querySelector(`.hud-elem-row[onclick="selectHudElem('${id}')"]`);
+  if(row)row.classList.add('selected');
+  document.querySelectorAll('.hud-widget').forEach(w=>w.classList.remove('selected'));
+  const wEl=document.getElementById('widget-'+id);if(wEl)wEl.classList.add('selected');
+  document.getElementById('hud-selected-label').textContent=e?e.name+' (selected)':'— select an element —';
+  if(e){
+    document.getElementById('hud-props-content').innerHTML=`
+      <div class="hud-prop-row"><div class="hud-prop-label">Scale</div><div class="opt-right"><span class="hud-prop-val" style="margin-right:8px;">1.0×</span><input class="skyz-slider" type="range" min="50" max="200" value="100" style="width:100px;" oninput="this.previousElementSibling.textContent=(this.value/100).toFixed(1)+'×'"></div></div>
+      <div class="hud-prop-row"><div class="hud-prop-label">Opacity</div><div class="opt-right"><span class="hud-prop-val" style="margin-right:8px;">100%</span><input class="skyz-slider" type="range" min="10" max="100" value="100" style="width:100px;" oninput="this.previousElementSibling.textContent=this.value+'%'"></div></div>
+      <div class="hud-prop-row"><div class="hud-prop-label">Pos X</div><div class="hud-prop-val">${typeof e.x==='number'?e.x+'px':e.x}</div></div>
+      <div class="hud-prop-row"><div class="hud-prop-label">Pos Y</div><div class="hud-prop-val">${e.y+'px'}</div></div>
+      <div class="hud-prop-row"><div class="hud-prop-label">Color</div>
+        <div class="hud-prop-swatch">
+          <div class="hud-color-dot active" style="background:rgba(100,190,255,0.9);" onclick="setHudColor(this,'Sky Blue')"></div>
+          <div class="hud-color-dot" style="background:#fff;" onclick="setHudColor(this,'White')"></div>
+          <div class="hud-color-dot" style="background:#fa6;" onclick="setHudColor(this,'Amber')"></div>
+          <div class="hud-color-dot" style="background:#8f8;" onclick="setHudColor(this,'Lime')"></div>
+          <div class="hud-color-dot" style="background:#f88;" onclick="setHudColor(this,'Red')"></div>
+          <div class="hud-color-dot" style="background:#c8f;" onclick="setHudColor(this,'Purple')"></div>
+        </div>
+      </div>
+      <div class="hud-prop-row"><div class="hud-prop-label">Shadow</div><label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="hud-prop-row"><div class="hud-prop-label">Border</div><label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="hud-prop-row"><div class="hud-prop-label">Size</div><select class="opt-select"><option>Small</option><option selected>Normal</option><option>Large</option></select></div>
+    `;
+  }
+}
+function setHudColor(el,name){
+  el.closest('.hud-prop-swatch').querySelectorAll('.hud-color-dot').forEach(d=>d.classList.remove('active'));
+  el.classList.add('active');toast('Color: '+name);
+}
+function toggleHudElem(id,on){
+  const e=hudElements.find(h=>h.id===id);if(e)e.enabled=on;buildHUD();
+}
+function makeDraggable(el,e){
+  let ox,oy,ix,iy,dragging=false;
+  el.addEventListener('mousedown',ev=>{
+    if(ev.target.tagName==='INPUT')return;
+    dragging=true;ix=ev.clientX;iy=ev.clientY;
+    ox=el.offsetLeft;oy=el.offsetTop;
+    ev.preventDefault();
+  });
+  window.addEventListener('mousemove',ev=>{
+    if(!dragging)return;
+    const dx=ev.clientX-ix,dy=ev.clientY-iy;
+    el.style.left=(ox+dx)+'px';el.style.top=(oy+dy)+'px';
+    el.style.right='auto';el.style.transform='none';el.style.bottom='auto';
+  });
+  window.addEventListener('mouseup',()=>{dragging=false;});
+}
+buildHUD();
+
+/* ══════════════════════════════════════════════
+   SHADERS DATA
+══════════════════════════════════════════════ */
+const shadersList=[
+  {name:'Complementary Reimagined',author:'EminGT',emoji:'🌇',desc:'Stunning natural lighting with cinematic atmosphere. Fully compatible with Iris 1.10.4 on 1.21.11.',tags:['Visual','Atmospheric'],active:true,settings:[
+    {label:'Shadow Quality',type:'select',val:'High',opts:['Low','Medium','High','Ultra']},
+    {label:'Ambient Occlusion',type:'toggle',val:true},
+    {label:'Bloom Intensity',type:'range',val:60,min:0,max:100},
+    {label:'Sun Angle',type:'range',val:45,min:0,max:90},
+  ]},
+  {name:'BSL Shaders',author:'capttatsu',emoji:'🌅',desc:'One of the most popular packs — warm tones, beautiful water, excellent performance on Sodium 0.8.2.',tags:['Visual','Performance'],active:false,settings:[
+    {label:'Shadow Distance',type:'select',val:'128',opts:['64','128','192','256']},
+    {label:'Wavy Leaves',type:'toggle',val:true},
+    {label:'Volumetric Clouds',type:'toggle',val:false},
+    {label:'Brightness',type:'range',val:50,min:0,max:100},
+  ]},
+  {name:'Sildur\'s Vibrant',author:'Sildur',emoji:'✨',desc:'Vibrant colours and god rays. Iris-native build tuned for 1.21.11 with improved underwater rendering.',tags:['Visual','Vibrant'],active:false,settings:[
+    {label:'Vibrance',type:'range',val:70,min:0,max:100},
+    {label:'God Rays',type:'toggle',val:true},
+    {label:'Lens Flare',type:'toggle',val:false},
+    {label:'Shadow Quality',type:'select',val:'Medium',opts:['Low','Medium','High']},
+  ]},
+  {name:'Rethinking Voxels',author:'gri573',emoji:'🌃',desc:'Voxel-based ray-traced lighting. Cutting-edge shadows and ambient occlusion — GPU intensive but breathtaking.',tags:['Ray Traced','Ultra'],active:false,settings:[
+    {label:'Voxel Range',type:'range',val:64,min:16,max:128},
+    {label:'GI Bounces',type:'select',val:'2',opts:['1','2','3','4']},
+    {label:'Temporal AA',type:'toggle',val:true},
+  ]},
+  {name:'No Shaders (Vanilla)',author:'Mojang',emoji:'🟫',desc:'Vanilla rendering via Sodium 0.8.2 — maximum performance, zero visual overhead.',tags:['Performance'],active:false,settings:[
+    {label:'Sodium Fast Render',type:'toggle',val:true},
+    {label:'Translucency Sorting',type:'toggle',val:false},
+  ]},
+];
+let activeShader=shadersList[0];
+function renderShaders(){
+  document.getElementById('shaders-main').innerHTML=shadersList.map((s,i)=>`
+    <div class="shader-card ${s.active?'active':''}" style="animation-delay:${i*0.07}s" onclick="selectShader(${i})">
+      <div class="shader-thumb">${s.emoji}</div>
+      <div class="shader-info">
+        <div class="shader-name">${s.name}</div>
+        <div class="shader-author">by ${s.author}</div>
+        <div class="shader-desc">${s.desc}</div>
+        <div class="shader-tags">${s.tags.map(t=>`<span class="cat-tag">${t}</span>`).join('')}</div>
+      </div>
+      ${s.active?'<div class="shader-active-badge">Active</div>':''}
+    </div>
+  `).join('');
+  renderShaderSettings();
+}
+function selectShader(idx){
+  shadersList.forEach(s=>s.active=false);
+  shadersList[idx].active=true;
+  activeShader=shadersList[idx];
+  renderShaders();
+  toast('Shader: '+activeShader.name);
+}
+function renderShaderSettings(){
+  const s=activeShader;
+  const cont=document.getElementById('shader-settings-content');
+  if(!s||!s.settings.length){cont.innerHTML='<span style="color:rgba(140,210,255,0.35);font-size:12px;">No settings available.</span>';return;}
+  cont.innerHTML=s.settings.map(st=>`
+    <div class="shader-setting-row">
+      <div class="opt-label" style="font-size:13px;margin-bottom:6px;">${st.label}</div>
+      ${st.type==='toggle'?`<label class="toggle"><input type="checkbox" ${st.val?'checked':''}><div class="toggle-track"></div><div class="toggle-thumb"></div></label>`:
+        st.type==='select'?`<select class="opt-select">${st.opts.map(o=>`<option ${o===st.val?'selected':''}>${o}</option>`).join('')}</select>`:
+        `<div class="opt-right"><span class="opt-val">${st.val}</span><input class="skyz-slider" type="range" min="${st.min}" max="${st.max}" value="${st.val}" style="width:130px;" oninput="this.previousElementSibling.textContent=this.value"></div>`
+      }
+    </div>
+  `).join('');
+}
+renderShaders();
+
+/* ══════════════════════════════════════════════
+   FRIENDS DATA
+══════════════════════════════════════════════ */
+const friendsData=[
+  {name:'xPixelSteve',emoji:'🧍',status:'Playing SkyBlock',statusClass:'ingame',online:true},
+  {name:'NotchFan99',emoji:'🧙',status:'Online — Main Menu',statusClass:'online',online:true},
+  {name:'CloudRider',emoji:'☁',status:'Playing Hypixel',statusClass:'ingame',online:true},
+  {name:'SkybridgeKing',emoji:'🏗',status:'Last seen 2 hrs ago',statusClass:'',online:false},
+  {name:'DeepCaveExplorer',emoji:'⛏',status:'Last seen 1 day ago',statusClass:'',online:false},
+  {name:'RedstoneGenius',emoji:'🔴',status:'Last seen 3 days ago',statusClass:'',online:false},
+];
+let activeFriend=friendsData[0];
+function renderFriends(){
+  const list=document.getElementById('friends-list');
+  list.innerHTML=friendsData.map((f,i)=>`
+    <div class="friend-row ${f===activeFriend?'active':''}" onclick="selectFriend(${i})">
+      <div class="friend-avatar">
+        ${f.emoji}
+        <div class="friend-online-dot ${f.online?(f.statusClass==='ingame'?'ingame':''):'offline'}"></div>
+      </div>
+      <div class="friend-info">
+        <div class="friend-name">${f.name}</div>
+        <div class="friend-status ${f.statusClass}">${f.status}</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('online-count').textContent=friendsData.filter(f=>f.online).length+' online';
+  renderFriendChat();
+}
+function selectFriend(idx){activeFriend=friendsData[idx];renderFriends();}
+const friendMsgs={
+  'xPixelSteve':[
+    {me:false,text:'yo wanna join my skyblock?',time:'2:14 PM'},
+    {me:true,text:'sure, send invite',time:'2:15 PM'},
+    {me:false,text:'sent! my island is at level 340 now 😎',time:'2:15 PM'},
+    {me:true,text:'nice let me hop on',time:'2:16 PM'},
+  ],
+  'NotchFan99':[
+    {me:false,text:'hey have you tried the new 1.21.11 features?',time:'11:32 AM'},
+    {me:true,text:'yeah the new spring drop content is sick',time:'11:35 AM'},
+    {me:false,text:'facts, performance is way better with Sodium 0.8.2',time:'11:36 AM'},
+  ],
+  'CloudRider':[
+    {me:true,text:'good game earlier!',time:'Yesterday'},
+    {me:false,text:'you too! we should do another BedWars',time:'Yesterday'},
+    {me:true,text:'definitely, tomorrow?',time:'Yesterday'},
+    {me:false,text:'works for me 👍',time:'Yesterday'},
+  ],
+};
+function renderFriendChat(){
+  const panel=document.getElementById('friends-chat-panel');
+  const f=activeFriend;
+  const msgs=(friendMsgs[f.name]||[]);
+  panel.innerHTML=`
+    <div class="friends-chat-header">
+      <div class="chat-avatar-lg">${f.emoji}</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">${f.name}</div>
+        <div class="chat-header-sub">${f.status}${f.online&&f.statusClass==='ingame'?` <span style="color:rgba(80,210,255,0.6);">· In Game</span>`:''}</div>
+      </div>
+      <div class="chat-actions">
+        ${f.online&&f.statusClass==='ingame'?`<button class="act-btn primary" onclick="toast('Requesting to join ${f.name}...')">Join World</button>`:''}
+        <button class="act-btn" onclick="toast('Invite sent to ${f.name}!')">Invite</button>
+        <button class="act-btn danger" onclick="toast('Removed ${f.name}')">Remove</button>
+      </div>
+    </div>
+    ${f.online&&f.statusClass==='ingame'?`
+    <div style="padding:10px 18px;border-bottom:1px solid rgba(140,210,255,0.08);">
+      <div class="friend-world-card" onclick="toast('Joining ${f.name}\'s world...')">
+        <div class="fwc-icon">🌍</div>
+        <div class="fwc-info">
+          <div class="fwc-name">${f.name}'s World</div>
+          <div class="fwc-meta">${f.status} · Click to join</div>
+        </div>
+        <button class="act-btn primary" style="flex-shrink:0;">Join →</button>
+      </div>
+    </div>`:''}
+    <div class="chat-msgs" id="chat-msgs-${f.name.replace(/\s/g,'')}">
+      ${msgs.length?msgs.map(m=>`
+        <div class="chat-msg ${m.me?'me':''}">
+          <div class="msg-av">${m.me?'🧍':f.emoji}</div>
+          <div class="msg-bubble">
+            <div class="msg-name">${m.me?'You':f.name}</div>
+            <div class="msg-text">${m.text}</div>
+            <div class="msg-time">${m.time}</div>
+          </div>
+        </div>
+      `).join(''):'<div style="text-align:center;color:rgba(140,210,255,0.25);font-size:12px;margin:auto;">No messages yet. Say hi!</div>'}
+    </div>
+    <div class="chat-input-area">
+      <input class="chat-input" placeholder="Message ${f.name}..." id="chat-in-${f.name.replace(/\s/g,'')}" onkeydown="if(event.key==='Enter')sendMsg('${f.name}')">
+      <button class="chat-send-btn" onclick="sendMsg('${f.name}')">Send</button>
+    </div>
+  `;
+}
+function sendMsg(fname){
+  const key=fname.replace(/\s/g,'');
+  const input=document.getElementById('chat-in-'+key);
+  if(!input||!input.value.trim())return;
+  const msgs=document.getElementById('chat-msgs-'+key);
+  const bubble=document.createElement('div');
+  bubble.className='chat-msg me';
+  bubble.innerHTML=`<div class="msg-av">🧍</div><div class="msg-bubble"><div class="msg-name">You</div><div class="msg-text">${input.value.trim()}</div><div class="msg-time">Now</div></div>`;
+  msgs.appendChild(bubble);
+  input.value='';
+  msgs.scrollTop=msgs.scrollHeight;
+}
+renderFriends();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <templates>
+        <!--
+          .nav-bar: top strip with "SKYZ / <PAGE>" on the left,
+          ← Back button on the right. Letter-spacing is handled via
+          the page name being passed already-spaced from Java.
+        -->
+        <template name="nav-bar">
+            <flow-layout direction="horizontal">
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="fixed">30</vertical>
+                </sizing>
+                <padding>
+                    <left>10</left>
+                    <right>10</right>
+                    <vertical>8</vertical>
+                </padding>
+                <vertical-alignment>center</vertical-alignment>
+                <gap>6</gap>
+                <surface>
+                    <panel dark="true"/>
+                </surface>
+                <children>
+                    <label>
+                        <text>SKYZ</text>
+                        <color>0xFFF0F8FF</color>
+                    </label>
+                    <label>
+                        <text>/</text>
+                        <color>0x4C8CD2FF</color>
+                    </label>
+                    <label id="nav-page">
+                        <text>{{page}}</text>
+                        <color>0x8C8CD2FF</color>
+                    </label>
+                    <flow-layout direction="horizontal">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                        </sizing>
+                    </flow-layout>
+                    <button id="nav-back">
+                        <text>← Back</text>
+                        <sizing>
+                            <horizontal method="fixed">74</horizontal>
+                            <vertical method="fixed">18</vertical>
+                        </sizing>
+                    </button>
+                </children>
+            </flow-layout>
+        </template>
+    </templates>
+</owo-ui>

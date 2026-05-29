@@ -1,0 +1,182 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Singleplayer screen — owo-lib edition (Phase 2c port).
+
+      Mirrors the Multiplayer screen layout exactly:
+        Nav bar  : SKYZ / SINGLEPLAYER  ─────────────────  [← BACK]
+        Action   : [+ CREATE WORLD]   [🌍 OPEN VANILLA SELECTOR]
+        Toolbar  : [search] [ALL] [SURVIVAL] [CREATIVE] [HARDCORE]   N worlds
+        Cards    : <scroll> wrapping a vertical flow of world cards
+
+      All ids use the attribute form (`id="..."`) — the child-element form
+      is silently ignored by owo's parser. See SKYZ_PORT_NOTES.md gotcha #1.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>SINGLEPLAYER</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Action row ──────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>10</gap>
+                    <children>
+                        <button id="btn-create-world">
+                            <text>+  CREATE WORLD</text>
+                            <sizing>
+                                <horizontal method="fill">68</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-vanilla-selector">
+                            <text>🌍  OPEN VANILLA SELECTOR</text>
+                            <sizing>
+                                <horizontal method="fill">30</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Toolbar (search + filters + count) ──────────────── -->
+                <!--
+                  Search box uses horizontal=expand so it absorbs whatever
+                  width is left after the fixed-width filter buttons + count
+                  label. This way the row never overflows on narrow GUIs
+                  (the original singleplayer port clipped HARDCORE off the
+                  right edge at MC GUI scale 4 because the fixed widths
+                  added up past the available space).
+                -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>5</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <flow-layout id="search-wrapper" direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="fixed">22</vertical>
+                            </sizing>
+                            <padding>
+                                <horizontal>8</horizontal>
+                                <vertical>2</vertical>
+                            </padding>
+                            <vertical-alignment>center</vertical-alignment>
+                            <children>
+                                <text-box id="tb-search">
+                                    <sizing><horizontal method="fill">100</horizontal></sizing>
+                                </text-box>
+                            </children>
+                        </flow-layout>
+                        <button id="btn-filter-all">
+                            <text>ALL</text>
+                            <sizing>
+                                <horizontal method="fixed">36</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-survival">
+                            <text>SURVIVAL</text>
+                            <sizing>
+                                <horizontal method="fixed">60</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-creative">
+                            <text>CREATIVE</text>
+                            <sizing>
+                                <horizontal method="fixed">60</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-filter-hardcore">
+                            <text>HARDCORE</text>
+                            <sizing>
+                                <horizontal method="fixed">60</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <label id="lbl-count">
+                            <text>0 worlds</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                    </children>
+                </flow-layout>
+
+                <!-- ── World list (scroll-wrapped, populated in build()) ── -->
+                <scroll direction="vertical" id="scroll-world-list">
+                    <flow-layout id="world-list" direction="vertical">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                            <vertical method="content"/>
+                        </sizing>
+                        <gap>6</gap>
+                        <padding>
+                            <right>6</right>
+                        </padding>
+                    </flow-layout>
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="fill">100</vertical>
+                    </sizing>
+                    <scrollbar-thiccness>4</scrollbar-thiccness>
+                    <scroll-step>72</scroll-step>
+                </scroll>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

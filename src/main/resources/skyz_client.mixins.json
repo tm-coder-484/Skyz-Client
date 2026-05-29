@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.skyz.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "TitleScreenMixin",
+    "GameMenuScreenMixin",
+    "DeathScreenMixin",
+    "DisconnectedScreenMixin",
+    "OptionsScreenMixin",
+    "MessageScreenMixin",
+    "ProgressScreenMixin",
+    "MultiplayerScreenMixin",
+    "InGameHudMixin",
+    "InGameHudOverlayMixin",
+    "FogRendererMixin",
+    "GameRendererMixin",
+    "ChatHudMixin",
+    "ParticleManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

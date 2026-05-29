@@ -1,0 +1,129 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <templates>
+        <!--
+          List-row cards used by Singleplayer (.world-card),
+          Multiplayer (.server-card) and Mods (.mod-card).
+          Owo's flow-layout with a panel surface gives us the look;
+          children are passed in by the screen so each card type can
+          fill its own meta lines + actions.
+        -->
+
+        <!--
+          .world-card and .server-card share a layout: square-ish icon on
+          the left, name + meta in the middle, action column on the right.
+        -->
+        <template name="list-card">
+            <flow-layout direction="horizontal">
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="content"/>
+                </sizing>
+                <padding><horizontal>14</horizontal><vertical>10</vertical></padding>
+                <gap>12</gap>
+                <vertical-alignment>center</vertical-alignment>
+                <surface>
+                    <panel dark="true"/>
+                </surface>
+                <children>
+                    <!-- Icon slot -->
+                    <flow-layout direction="vertical">
+                        <sizing>
+                            <horizontal method="fixed">52</horizontal>
+                            <vertical method="fixed">52</vertical>
+                        </sizing>
+                        <horizontal-alignment>center</horizontal-alignment>
+                        <vertical-alignment>center</vertical-alignment>
+                        <surface>
+                            <panel dark="true"/>
+                        </surface>
+                        <children>
+                            <label>
+                                <text>{{icon|}}</text>
+                                <color>0xFFEEF6FF</color>
+                            </label>
+                        </children>
+                    </flow-layout>
+
+                    <!-- Info column: name + meta lines -->
+                    <flow-layout direction="vertical">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                        </sizing>
+                        <gap>3</gap>
+                        <children>
+                            <label>
+                                <text>{{name}}</text>
+                                <color>0xFFEEF6FF</color>
+                            </label>
+                            <label>
+                                <text>{{meta|}}</text>
+                                <color>0x6F8CD2FF</color>
+                            </label>
+                            <label>
+                                <text>{{sub|}}</text>
+                                <color>0x8C8CD2FF</color>
+                            </label>
+                        </children>
+                    </flow-layout>
+
+                    <!-- Actions slot -->
+                    <flow-layout direction="vertical">
+                        <gap>5</gap>
+                        <horizontal-alignment>right</horizontal-alignment>
+                        <children>
+                            {{>actions}}
+                        </children>
+                    </flow-layout>
+                </children>
+            </flow-layout>
+        </template>
+
+        <!--
+          .mod-card: vertical layout, distinct from list-card.
+          Top row: icon + name + cat-tag. Body: description.
+          Bottom row: enable toggle + Config / Settings buttons.
+        -->
+        <template name="mod-card">
+            <flow-layout direction="vertical">
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+                <padding><all>14</all></padding>
+                <gap>10</gap>
+                <surface>
+                    <panel dark="true"/>
+                </surface>
+                <children>
+                    <flow-layout direction="horizontal">
+                        <gap>10</gap>
+                        <vertical-alignment>center</vertical-alignment>
+                        <children>
+                            <label>
+                                <text>{{name}}</text>
+                                <color>0xFFEEF6FF</color>
+                            </label>
+                            <flow-layout direction="horizontal">
+                                <sizing>
+                                    <horizontal method="fill">100</horizontal>
+                                </sizing>
+                            </flow-layout>
+                            {{>tag}}
+                        </children>
+                    </flow-layout>
+                    <label>
+                        <text>{{description|}}</text>
+                        <color>0xB38CD2FF</color>
+                    </label>
+                    <flow-layout direction="horizontal">
+                        <gap>8</gap>
+                        <vertical-alignment>center</vertical-alignment>
+                        <children>
+                            {{>actions}}
+                        </children>
+                    </flow-layout>
+                </children>
+            </flow-layout>
+        </template>
+    </templates>
+</owo-ui>

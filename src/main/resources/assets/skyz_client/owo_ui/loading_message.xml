@@ -1,0 +1,52 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Loading Message screen — replaces vanilla MessageScreen.
+
+      Shows a centred message card with a single line of status text plus
+      an animated indicator. Used during quick transitions like "Saving
+      world..." between gameplay and the title screen, server kicks
+      mid-flight, etc. The title and message text come from whatever
+      vanilla MessageScreen was constructed with (passed through verbatim
+      via the mixin).
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+
+            <children>
+                <flow-layout id="card" direction="vertical">
+                    <sizing>
+                        <horizontal method="fixed">340</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <padding>
+                        <top>22</top>
+                        <bottom>22</bottom>
+                        <left>20</left>
+                        <right>20</right>
+                    </padding>
+                    <gap>10</gap>
+                    <horizontal-alignment>center</horizontal-alignment>
+
+                    <children>
+                        <label id="lbl-title">
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label id="lbl-message">
+                            <text>...</text>
+                            <color>#CCB0D8FF</color>
+                            <horizontal-text-alignment>center</horizontal-text-alignment>
+                        </label>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

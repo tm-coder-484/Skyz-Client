@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skyz Client — HUD Template</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Raleway:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+
+/* ── STAGE (fixed 1920×1080 canvas, auto-scaled) ── */
+#stage{
+  width:1920px;height:1080px;
+  position:absolute;top:0;left:0;
+  transform-origin:top left;
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* ── BACKGROUND ── */
+#world{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,#3a6fa0 0%,#4a8ab5 15%,#6aaa80 42%,#3d6b40 62%,#2a4a2a 100%);
+}
+#world::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 50% at 50% 30%,rgba(255,255,255,0.1) 0%,transparent 60%);
+}
+#rain-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.raindrop{position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(180,220,255,0.45));border-radius:1px;animation:fall linear infinite;}
+@keyframes fall{from{transform:translateY(-80px);}to{transform:translateY(1160px);}}
+
+/* ── CROSSHAIR ── */
+#xhair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+#xhair::before,#xhair::after{content:'';position:absolute;background:rgba(255,255,255,0.9);}
+#xhair::before{width:1px;height:18px;left:0;top:-9px;}
+#xhair::after{width:18px;height:1px;left:-9px;top:0;}
+
+/* ── PANEL BASE ── */
+.G{
+  position:absolute;
+  background:rgba(5,15,48,0.72);
+  border:1px solid rgba(140,210,255,0.22);
+  border-radius:10px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.07);
+  padding:10px 13px;
+}
+
+/* ── FPS ── */
+#w-fps{top:18px;left:18px;width:195px;display:flex;align-items:center;gap:10px;}
+.fps-val{font-size:26px;font-weight:700;color:#4cfa87;text-shadow:0 0 14px rgba(76,250,135,0.7);line-height:1;}
+.fps-lbl{font-size:9px;color:rgba(76,250,135,0.45);letter-spacing:3px;text-transform:uppercase;margin-top:2px;}
+#fps-spark{display:flex;align-items:flex-end;gap:2px;height:26px;margin-left:auto;}
+.spk{width:4px;border-radius:2px;background:rgba(76,250,135,0.35);}
+.spk.hi{background:rgba(76,250,135,0.85);}
+
+/* ── COORDS ── */
+#w-coords{top:88px;left:18px;width:230px;}
+.c-row{display:flex;align-items:baseline;gap:7px;padding:3px 0;}
+.c-row+.c-row{border-top:1px solid rgba(140,210,255,0.06);}
+.c-axis{font-size:10px;font-weight:700;width:10px;flex-shrink:0;}
+.ax-x{color:rgba(255,110,110,0.9);}
+.ax-y{color:rgba(110,230,110,0.9);}
+.ax-z{color:rgba(110,160,255,0.9);}
+.c-val{font-size:13px;font-weight:600;color:rgba(220,240,255,0.95);}
+.c-blk{margin-left:auto;font-size:9px;color:rgba(140,210,255,0.32);}
+.c-dir{margin-top:7px;padding-top:6px;border-top:1px solid rgba(140,210,255,0.08);
+  display:flex;gap:10px;font-size:10px;color:rgba(140,210,255,0.45);}
+.c-dir b{color:rgba(220,240,255,0.75);font-weight:600;}
+
+/* ── BIOME ── */
+#w-biome{top:248px;left:18px;width:185px;display:flex;align-items:center;gap:9px;}
+.wi-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.wi-lbl{font-size:9px;color:rgba(140,210,255,0.4);letter-spacing:2px;text-transform:uppercase;}
+.wi-val{font-size:13px;font-weight:600;color:rgba(220,240,255,0.9);margin-top:1px;}
+
+/* ── ENTITIES ── */
+#w-ents{top:310px;left:18px;width:185px;display:flex;align-items:center;gap:9px;}
+
+/* ── SATURATION ── */
+#w-sat{top:372px;left:18px;width:185px;display:flex;align-items:center;gap:9px;}
+.sat-bar-wrap{flex:1;}
+.sat-bar{width:100%;height:4px;border-radius:2px;background:rgba(250,204,76,0.12);overflow:hidden;margin-top:4px;}
+.sat-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#c89000,#facc4c);box-shadow:0 0 6px rgba(250,204,76,0.45);}
+.sat-val{font-size:12px;font-weight:700;color:#facc4c;margin-left:6px;}
+
+/* ── NEARBY ── */
+#w-nearby{top:428px;left:18px;width:185px;}
+.nb-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(140,210,255,0.32);margin-bottom:7px;}
+.nb-empty{font-size:11px;color:rgba(140,210,255,0.28);}
+.nb-row{display:flex;align-items:center;gap:7px;padding:2px 0;}
+.nb-dot{width:6px;height:6px;border-radius:50%;background:#4cfa87;box-shadow:0 0 5px rgba(76,250,135,0.7);flex-shrink:0;}
+.nb-dot.far{background:#facc4c;}
+.nb-name{font-size:11px;color:rgba(200,235,255,0.75);font-weight:500;}
+.nb-dist{font-size:10px;color:rgba(140,210,255,0.33);margin-left:auto;}
+
+/* ── MINIMAP ── */
+#w-minimap{
+  top:18px;right:18px;width:196px;height:196px;
+  padding:0;border-radius:12px;overflow:hidden;
+}
+#mm-canvas{display:block;width:196px;height:196px;}
+.mm-overlay{position:absolute;inset:0;border-radius:12px;pointer-events:none;
+  box-shadow:inset 0 0 32px rgba(0,0,20,0.55);
+  border:1px solid rgba(140,210,255,0.28);}
+.mm-n{position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  font-size:10px;font-weight:700;color:rgba(74,184,240,0.9);letter-spacing:1px;
+  text-shadow:0 0 8px rgba(74,184,240,0.8);}
+.mm-player{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:8px;height:8px;border-radius:50%;background:#fff;
+  box-shadow:0 0 10px rgba(255,255,255,0.9),0 0 0 2px rgba(74,184,240,0.7);}
+.mm-coord{position:absolute;bottom:7px;left:0;right:0;text-align:center;
+  font-size:8px;color:rgba(140,210,255,0.4);letter-spacing:1px;}
+
+/* ── STATS ── */
+#w-stats{top:228px;right:18px;width:196px;}
+.st-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.st-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(140,210,255,0.35);}
+.st-ping{display:flex;align-items:center;gap:4px;font-size:9px;color:rgba(76,250,135,0.65);}
+.st-led{width:5px;height:5px;border-radius:50%;background:#4cfa87;box-shadow:0 0 5px rgba(76,250,135,0.8);}
+.st-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid rgba(140,210,255,0.06);}
+.st-row:last-child{border-bottom:none;padding-bottom:0;}
+.st-row:first-child{padding-top:0;}
+.st-ico{font-size:12px;width:15px;text-align:center;flex-shrink:0;}
+.st-key{font-size:10px;color:rgba(160,210,255,0.45);flex:1;}
+.st-val{font-size:11px;font-weight:700;color:rgba(220,240,255,0.9);}
+
+/* ── RESOURCE BARS (bottom-right) ── */
+#w-tool{bottom:248px;right:18px;width:220px;display:flex;align-items:center;gap:10px;}
+.tl-ico{font-size:20px;}
+.tl-name{font-size:11px;font-weight:600;color:rgba(220,240,255,0.85);}
+.tl-dur{font-size:9px;color:rgba(140,210,255,0.38);margin-top:2px;letter-spacing:0.5px;}
+
+.rb{bottom:0;right:18px;width:220px;}
+#rb-hp {bottom:192px;right:18px;}
+#rb-mp {bottom:144px;right:18px;}
+#rb-st {bottom:96px; right:18px;}
+#rb-sh {bottom:48px; right:18px;}
+.rb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.rb-name{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(160,210,255,0.4);}
+.rb-ico{margin-right:4px;}
+.rb-val{font-size:10px;font-weight:700;}
+.rb-track{width:100%;height:5px;border-radius:3px;background:rgba(140,210,255,0.08);overflow:hidden;}
+.rb-fill{height:100%;border-radius:3px;}
+.rb-fill::after{content:'';display:block;height:50%;border-radius:3px;background:rgba(255,255,255,0.18);}
+/* colours */
+#rb-hp .rb-val{color:#4cfa87;}
+#rb-hp .rb-fill{background:linear-gradient(90deg,#2dba60,#4cfa87);box-shadow:0 0 7px rgba(76,250,135,0.5);}
+#rb-mp .rb-val{color:#4ab8f0;}
+#rb-mp .rb-fill{background:linear-gradient(90deg,#1a70c8,#4ab8f0);box-shadow:0 0 7px rgba(74,184,240,0.5);}
+#rb-st .rb-val{color:#facc4c;}
+#rb-st .rb-fill{background:linear-gradient(90deg,#c89000,#facc4c);box-shadow:0 0 7px rgba(250,204,76,0.45);}
+#rb-sh .rb-val{color:#c88cff;}
+#rb-sh .rb-fill{background:linear-gradient(90deg,#8040cc,#c88cff);box-shadow:0 0 7px rgba(200,140,255,0.45);}
+
+/* ── COMPASS ── */
+#w-compass{
+  bottom:130px;left:50%;transform:translateX(-50%);
+  width:480px;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;
+  position:absolute;
+}
+.cp-tick{font-size:12px;color:rgba(140,210,255,0.28);font-weight:500;letter-spacing:0;width:36px;text-align:center;}
+.cp-tick.card{color:rgba(140,210,255,0.6);font-weight:700;font-size:13px;}
+.cp-tick.active{color:#fff;font-weight:700;font-size:16px;text-shadow:0 0 12px rgba(74,184,240,0.9);}
+.cp-needle{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:2px;height:4px;background:rgba(74,184,240,0.9);}
+
+/* ── XP BAR ── */
+#w-xp{
+  bottom:112px;left:50%;transform:translateX(-50%);
+  width:580px;height:5px;border-radius:3px;
+  background:rgba(100,200,100,0.1);overflow:hidden;
+  position:absolute;padding:0;border-radius:3px;border:none;box-shadow:none;
+  background:rgba(60,120,60,0.2);
+}
+#xp-fill{height:100%;width:38%;border-radius:3px;
+  background:linear-gradient(90deg,rgba(60,160,60,0.9),rgba(100,240,80,0.9));
+  box-shadow:0 0 8px rgba(100,220,80,0.5);}
+
+/* ── HEALTH + FOOD ── */
+#w-hf{
+  bottom:76px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:22px;
+  position:absolute;background:none;border:none;box-shadow:none;padding:0;
+}
+.hearts,.foods{display:flex;gap:3px;align-items:center;}
+.hrt{font-size:17px;line-height:1;transition:filter 0.2s;}
+.hrt.full{filter:drop-shadow(0 0 4px rgba(255,60,60,0.7));}
+.hrt.half{opacity:0.5;}
+.hrt.gone{opacity:0.15;}
+.fod{font-size:15px;line-height:1;}
+.fod.gone{opacity:0.15;}
+
+/* ── HOTBAR ── */
+#w-hotbar{
+  bottom:14px;left:50%;transform:translateX(-50%);
+  display:flex;gap:4px;
+  position:absolute;background:none;border:none;box-shadow:none;padding:0;
+}
+.slot{
+  width:60px;height:60px;border-radius:10px;
+  background:rgba(5,15,48,0.65);border:1px solid rgba(140,210,255,0.18);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.slot.on{border-color:rgba(100,190,255,0.7);box-shadow:0 0 0 2px rgba(74,184,240,0.3),0 0 18px rgba(60,140,255,0.25);}
+.s-item{font-size:28px;line-height:1;}
+.s-count{position:absolute;bottom:4px;right:5px;font-size:10px;font-weight:700;color:rgba(220,240,255,0.9);text-shadow:0 1px 3px #000;}
+.s-num{position:absolute;top:3px;left:5px;font-size:8px;color:rgba(140,210,255,0.25);}
+
+/* ── PING (bottom-left) ── */
+#w-ping{bottom:18px;left:18px;display:flex;align-items:center;gap:6px;padding:6px 12px;}
+.p-led{width:6px;height:6px;border-radius:50%;background:#4cfa87;box-shadow:0 0 6px rgba(76,250,135,0.8);animation:pls 2s ease-in-out infinite;}
+@keyframes pls{0%,100%{opacity:0.55;}50%{opacity:1;}}
+.p-srv{font-size:11px;font-weight:600;color:rgba(180,225,255,0.7);}
+.p-ms{font-size:11px;color:rgba(140,210,255,0.4);}
+
+/* ── ANNOTATION TOGGLE ── */
+#ann-btn{
+  position:absolute;top:18px;left:50%;transform:translateX(-50%);z-index:200;
+  padding:6px 18px;background:rgba(5,15,48,0.85);border:1px solid rgba(140,210,255,0.22);
+  border-radius:8px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;
+  letter-spacing:2px;text-transform:uppercase;color:rgba(140,210,255,0.5);outline:none;
+}
+#ann-btn:hover{border-color:rgba(140,210,255,0.4);color:#fff;}
+
+/* ── ANNOTATIONS ── */
+.ann{
+  position:absolute;pointer-events:none;z-index:150;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.5px;line-height:1.5;
+  color:rgba(255,210,70,0.75);background:rgba(0,0,0,0.45);
+  padding:3px 7px;border-radius:4px;border-left:2px solid rgba(255,210,70,0.5);
+  white-space:nowrap;
+}
+#ann-layer{transition:opacity 0.25s;}
+#ann-layer.off{opacity:0;}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- WORLD -->
+<div id="world"><div id="rain-layer"></div></div>
+<div id="xhair"></div>
+
+<!-- ═══ TOP-LEFT ═══ -->
+
+<!-- FPS -->
+<div class="G" id="w-fps">
+  <div>
+    <div class="fps-val" id="fps-num">60</div>
+    <div class="fps-lbl">FPS</div>
+  </div>
+  <div id="fps-spark"></div>
+</div>
+
+<!-- Coords -->
+<div class="G" id="w-coords">
+  <div class="c-row"><span class="c-axis ax-x">X</span><span class="c-val">−308,557</span><span class="c-blk">−308557</span></div>
+  <div class="c-row"><span class="c-axis ax-y">Y</span><span class="c-val">104</span><span class="c-blk">Layer 104</span></div>
+  <div class="c-row"><span class="c-axis ax-z">Z</span><span class="c-val">−139,954</span><span class="c-blk">−139954</span></div>
+  <div class="c-dir">Facing <b>SE</b> &nbsp;·&nbsp; <b>225°</b></div>
+</div>
+
+<!-- Biome -->
+<div class="G" id="w-biome">
+  <span class="wi-icon">🌲</span>
+  <div><div class="wi-lbl">Biome</div><div class="wi-val">Forest</div></div>
+</div>
+
+<!-- Entities -->
+<div class="G" id="w-ents">
+  <span class="wi-icon">👾</span>
+  <div><div class="wi-lbl">Entities</div><div class="wi-val">19 <span style="font-size:10px;color:rgba(140,210,255,0.35);font-weight:400;">loaded</span></div></div>
+</div>
+
+<!-- Saturation -->
+<div class="G" id="w-sat">
+  <span class="wi-icon">🍗</span>
+  <div class="sat-bar-wrap">
+    <div class="wi-lbl">Saturation</div>
+    <div class="sat-bar"><div class="sat-fill" style="width:58%;"></div></div>
+  </div>
+  <span class="sat-val">5.8</span>
+</div>
+
+<!-- Nearby -->
+<div class="G" id="w-nearby">
+  <div class="nb-title">Nearby Players</div>
+  <div class="nb-empty">None nearby</div>
+</div>
+
+<!-- ═══ TOP-RIGHT ═══ -->
+
+<!-- Minimap -->
+<div class="G" id="w-minimap">
+  <canvas id="mm-canvas" width="196" height="196"></canvas>
+  <div class="mm-overlay"></div>
+  <div class="mm-n">N</div>
+  <div class="mm-player"></div>
+  <div class="mm-coord">Oceania</div>
+</div>
+
+<!-- Stats -->
+<div class="G" id="w-stats">
+  <div class="st-head">
+    <span class="st-title">Stats</span>
+    <div class="st-ping"><div class="st-led"></div>24ms</div>
+  </div>
+  <div class="st-row"><span class="st-ico">💰</span><span class="st-key">Money</span><span class="st-val" style="color:#facc4c;">1.45K</span></div>
+  <div class="st-row"><span class="st-ico" style="color:#c88cff;">◈</span><span class="st-key">Shards</span><span class="st-val" style="color:#c88cff;">1.85K</span></div>
+  <div class="st-row"><span class="st-ico">⚔</span><span class="st-key">Kills</span><span class="st-val" style="color:#4cfa87;">0</span></div>
+  <div class="st-row"><span class="st-ico">💀</span><span class="st-key">Deaths</span><span class="st-val" style="color:#ff8080;">2</span></div>
+  <div class="st-row"><span class="st-ico">⏱</span><span class="st-key">Keyall</span><span class="st-val">2m 16s</span></div>
+  <div class="st-row"><span class="st-ico">🕐</span><span class="st-key">Playtime</span><span class="st-val">1d 17h</span></div>
+</div>
+
+<!-- ═══ BOTTOM-RIGHT ═══ -->
+
+<!-- Tool -->
+<div class="G" id="w-tool">
+  <span class="tl-ico">🗡️</span>
+  <div><div class="tl-name">Diamond Sword</div><div class="tl-dur">1561 / 1561 · 100%</div></div>
+</div>
+
+<!-- Resource bars -->
+<div class="G rb" id="rb-hp">
+  <div class="rb-head"><div><span class="rb-ico">❤</span><span class="rb-name">Health</span></div><span class="rb-val">133 / 165</span></div>
+  <div class="rb-track"><div class="rb-fill" style="width:80%;"></div></div>
+</div>
+<div class="G rb" id="rb-mp">
+  <div class="rb-head"><div><span class="rb-ico">💧</span><span class="rb-name">Mana</span></div><span class="rb-val">208 / 240</span></div>
+  <div class="rb-track"><div class="rb-fill" style="width:87%;"></div></div>
+</div>
+<div class="G rb" id="rb-st">
+  <div class="rb-head"><div><span class="rb-ico">⚡</span><span class="rb-name">Stamina</span></div><span class="rb-val">193 / 225</span></div>
+  <div class="rb-track"><div class="rb-fill" style="width:86%;"></div></div>
+</div>
+<div class="G rb" id="rb-sh">
+  <div class="rb-head"><div><span class="rb-ico">🛡</span><span class="rb-name">Shield</span></div><span class="rb-val">163 / 195</span></div>
+  <div class="rb-track"><div class="rb-fill" style="width:84%;"></div></div>
+</div>
+
+<!-- ═══ BOTTOM CENTER ═══ -->
+
+<!-- Compass -->
+<div class="G" id="w-compass">
+  <span class="cp-tick">N</span><span class="cp-tick">NNE</span><span class="cp-tick card">NE</span>
+  <span class="cp-tick">ENE</span><span class="cp-tick card">E</span><span class="cp-tick">ESE</span>
+  <span class="cp-tick card active">SE</span>
+  <span class="cp-tick">SSE</span><span class="cp-tick card">S</span><span class="cp-tick">SSW</span>
+  <span class="cp-tick card">SW</span><span class="cp-tick">WSW</span><span class="cp-tick card">W</span>
+  <div class="cp-needle"></div>
+</div>
+
+<!-- XP bar -->
+<div id="w-xp"><div id="xp-fill"></div></div>
+
+<!-- Hearts + food -->
+<div id="w-hf">
+  <div class="hearts" id="hearts"></div>
+  <div class="foods" id="foods"></div>
+</div>
+
+<!-- Hotbar -->
+<div id="w-hotbar">
+  <div class="slot on"><span class="s-num">1</span><span class="s-item">🗡️</span></div>
+  <div class="slot"><span class="s-num">2</span><span class="s-item">🏹</span><span class="s-count">5</span></div>
+  <div class="slot"><span class="s-num">3</span><span class="s-item">🥩</span><span class="s-count">5</span></div>
+  <div class="slot"><span class="s-num">4</span><span class="s-item">🍗</span></div>
+  <div class="slot"><span class="s-num">5</span><span class="s-item">💎</span><span class="s-count">2</span></div>
+  <div class="slot"><span class="s-num">6</span><span class="s-item">🥩</span><span class="s-count">2</span></div>
+  <div class="slot"><span class="s-num">7</span><span class="s-item">🍖</span><span class="s-count">3</span></div>
+  <div class="slot"><span class="s-num">8</span></div>
+  <div class="slot"><span class="s-num">9</span><span class="s-item">🪣</span></div>
+</div>
+
+<!-- ═══ BOTTOM-LEFT ═══ -->
+<div class="G" id="w-ping">
+  <div class="p-led"></div>
+  <span class="p-srv">Oceania</span>
+  <span class="p-ms">&nbsp;·&nbsp;24ms</span>
+</div>
+
+<!-- ═══ ANNOTATIONS ═══ -->
+<button id="ann-btn" onclick="toggleAnn()">⌥ Annotations</button>
+<div id="ann-layer" class="off">
+  <div class="ann" style="top:28px;left:220px;">FpsHudModule · renderFps(DrawContext)</div>
+  <div class="ann" style="top:100px;left:255px;">CoordsHudModule · renderCoords(DrawContext)</div>
+  <div class="ann" style="top:258px;left:210px;">BiomeHudModule · renderBiome(DrawContext)</div>
+  <div class="ann" style="top:320px;left:210px;">EntityCountModule · render(DrawContext)</div>
+  <div class="ann" style="top:382px;left:210px;">SaturationModule · renderSaturation(DrawContext)</div>
+  <div class="ann" style="top:440px;left:210px;">NearbyPlayersModule · render(DrawContext)</div>
+  <div class="ann" style="top:28px;right:222px;">MinimapModule · renderMinimap(DrawContext)</div>
+  <div class="ann" style="top:238px;right:222px;">StatsHudModule · renderStats(DrawContext)</div>
+  <div class="ann" style="bottom:260px;right:246px;">ToolInfoModule · renderTool(DrawContext)</div>
+  <div class="ann" style="bottom:200px;right:246px;">ResourceBarsModule · renderBars(DrawContext, type=HP)</div>
+  <div class="ann" style="bottom:152px;right:246px;">ResourceBarsModule · renderBars(DrawContext, type=MANA)</div>
+  <div class="ann" style="bottom:104px;right:246px;">ResourceBarsModule · renderBars(DrawContext, type=STAMINA)</div>
+  <div class="ann" style="bottom:56px;right:246px;">ResourceBarsModule · renderBars(DrawContext, type=SHIELD)</div>
+  <div class="ann" style="bottom:138px;left:50%;transform:translateX(-50%);">CompassHudModule · renderCompass(DrawContext, facing)</div>
+  <div class="ann" style="bottom:120px;left:50%;transform:translateX(-50%);">XpBarModule · renderXpBar(DrawContext)</div>
+  <div class="ann" style="bottom:80px;left:50%;transform:translateX(-50%);">HealthModule · renderHearts(DrawContext) &nbsp;|&nbsp; FoodModule · renderFood(DrawContext)</div>
+  <div class="ann" style="bottom:8px;left:50%;transform:translateX(-50%);">HotbarModule · renderHotbar(DrawContext, selectedSlot)</div>
+  <div class="ann" style="bottom:28px;left:180px;">PingModule · renderPing(DrawContext)</div>
+</div>
+
+</div><!-- /stage -->
+
+<script>
+// ── SCALE ──
+function scale(){
+  const s=document.getElementById('stage');
+  const sx=window.innerWidth/1920, sy=window.innerHeight/1080, sc=Math.min(sx,sy);
+  const ox=(window.innerWidth-1920*sc)/2, oy=(window.innerHeight-1080*sc)/2;
+  s.style.transform=`translate(${ox}px,${oy}px) scale(${sc})`;
+}
+scale(); window.addEventListener('resize',scale);
+
+// ── RAIN ──
+const rl=document.getElementById('rain-layer');
+for(let i=0;i<90;i++){
+  const d=document.createElement('div'); d.className='raindrop';
+  const h=35+Math.random()*55;
+  d.style.cssText=`left:${Math.random()*100}%;top:-${h}px;height:${h}px;opacity:${0.18+Math.random()*0.45};animation-duration:${0.35+Math.random()*0.45}s;animation-delay:${-Math.random()*1.5}s;`;
+  rl.appendChild(d);
+}
+
+// ── FPS GRAPH ──
+const vals=[56,60,58,63,59,61,60,57,62,60,61,60];
+const spark=document.getElementById('fps-spark');
+spark.style.cssText='display:flex;align-items:flex-end;gap:2px;height:26px;margin-left:auto;';
+vals.forEach((v,i)=>{
+  const b=document.createElement('div'); b.className='spk'+(i===vals.length-1?' hi':'');
+  b.style.cssText=`width:4px;border-radius:2px;height:${Math.round((v/70)*26)}px;`;
+  spark.appendChild(b);
+});
+
+// ── FPS LIVE ──
+setInterval(()=>{
+  const f=55+Math.round(Math.random()*10);
+  const el=document.getElementById('fps-num');
+  el.textContent=f;
+  const c=f>55?'#4cfa87':f>40?'#facc4c':'#ff6060';
+  el.style.color=c; el.style.textShadow=`0 0 14px ${c}80`;
+},900);
+
+// ── MINIMAP ──
+const mc=document.getElementById('mm-canvas');
+const mx=mc.getContext('2d');
+function drawMinimap(){
+  const W=196,H=196;
+  // terrain base
+  const g=mx.createRadialGradient(W/2,H/2,0,W/2,H/2,W/2);
+  g.addColorStop(0,'#406040'); g.addColorStop(0.5,'#305030'); g.addColorStop(1,'#1e3a1e');
+  mx.fillStyle=g; mx.fillRect(0,0,W,H);
+  // lighter patches
+  [{x:80,y:110,r:28},{x:130,y:60,r:18},{x:40,y:60,r:14}].forEach(p=>{
+    const pg=mx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+    pg.addColorStop(0,'rgba(80,130,60,0.7)'); pg.addColorStop(1,'rgba(80,130,60,0)');
+    mx.fillStyle=pg; mx.fillRect(0,0,W,H);
+  });
+  // water
+  [{x:60,y:140,rw:22,rh:14},{x:150,y:90,rw:14,rh:9}].forEach(w=>{
+    mx.fillStyle='rgba(40,90,180,0.65)';
+    mx.beginPath(); mx.ellipse(w.x,w.y,w.rw,w.rh,0,0,Math.PI*2); mx.fill();
+    mx.fillStyle='rgba(80,140,220,0.3)';
+    mx.beginPath(); mx.ellipse(w.x-4,w.y-2,w.rw*0.5,w.rh*0.5,0,0,Math.PI*2); mx.fill();
+  });
+  // trees
+  mx.fillStyle='rgba(20,55,20,0.9)';
+  [[30,30],[50,45],[25,70],[70,25],[90,50],[110,35],[35,95],[60,80],[120,70],[140,50],[160,65],[80,100],[45,130],[170,100]].forEach(([x,y])=>{
+    mx.beginPath(); mx.arc(x,y,3+Math.random()*2.5,0,Math.PI*2); mx.fill();
+  });
+  // grid
+  mx.strokeStyle='rgba(140,210,255,0.06)'; mx.lineWidth=1;
+  for(let i=0;i<W;i+=20){
+    mx.beginPath();mx.moveTo(i,0);mx.lineTo(i,H);mx.stroke();
+    mx.beginPath();mx.moveTo(0,i);mx.lineTo(W,i);mx.stroke();
+  }
+  // vignette
+  const v=mx.createRadialGradient(W/2,H/2,55,W/2,H/2,W/2);
+  v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,20,0.65)');
+  mx.fillStyle=v; mx.fillRect(0,0,W,H);
+}
+drawMinimap();
+
+// ── HEARTS ──
+const he=document.getElementById('hearts');
+for(let i=0;i<10;i++){
+  const h=document.createElement('span');
+  h.className='hrt '+(i<8?'full':i===8?'half':'gone');
+  h.textContent='❤'; he.appendChild(h);
+}
+
+// ── FOOD ──
+const fe=document.getElementById('foods');
+for(let i=0;i<10;i++){
+  const f=document.createElement('span');
+  f.className='fod'+(i>=6?' gone':'');
+  f.textContent=i<6?'🍗':'🍗'; fe.appendChild(f);
+}
+
+// ── ANNOTATIONS ──
+function toggleAnn(){
+  document.getElementById('ann-layer').classList.toggle('off');
+}
+</script>
+</body>
+</html>

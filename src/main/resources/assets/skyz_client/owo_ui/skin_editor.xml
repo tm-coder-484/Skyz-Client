@@ -1,0 +1,122 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Skin Editor — owo-lib edition.
+
+      Two-pane layout:
+        Left  (260 px): live 3D-rendered player preview using
+                        InventoryScreen.drawEntity. The player rotates
+                        with the mouse position so users can see all
+                        sides of their skin.
+        Right (expand): the 7 PlayerModelPart toggles (Cape, Jacket, Left
+                        Sleeve, Right Sleeve, Left Pants Leg, Right
+                        Pants Leg, Hat), an arm selector (Left/Right),
+                        and a "Change Skin at minecraft.net" button
+                        that opens the user's browser to their profile
+                        page.
+
+      Preview renders OUTSIDE the owo tree (in the screen's render() method)
+      because owo doesn't expose a 3D-entity component. The empty
+      "preview-placeholder" flow on the left side reserves the space; the
+      Java render() reads its bounds and draws the entity into them.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>SKIN EDITOR</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Two-pane body (preview + toggles) ───────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="expand">100</vertical>
+                    </sizing>
+                    <gap>12</gap>
+                    <children>
+                        <!-- Left: preview placeholder. Java render() draws
+                             the 3D player entity into this rectangle. -->
+                        <flow-layout id="preview-pane" direction="vertical">
+                            <sizing>
+                                <horizontal method="fixed">260</horizontal>
+                                <vertical method="fill">100</vertical>
+                            </sizing>
+                            <horizontal-alignment>center</horizontal-alignment>
+                            <vertical-alignment>bottom</vertical-alignment>
+                            <padding>
+                                <bottom>10</bottom>
+                            </padding>
+                            <children>
+                                <label id="lbl-preview-hint">
+                                    <text>Move mouse to rotate</text>
+                                    <color>#778CD2FF</color>
+                                </label>
+                            </children>
+                        </flow-layout>
+
+                        <!-- Right: toggles + actions. -->
+                        <flow-layout id="toggles-pane" direction="vertical">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="fill">100</vertical>
+                            </sizing>
+                            <padding>
+                                <top>12</top>
+                                <bottom>12</bottom>
+                                <left>14</left>
+                                <right>14</right>
+                            </padding>
+                            <gap>5</gap>
+                        </flow-layout>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

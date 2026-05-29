@@ -1,0 +1,92 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Settings screen — owo-lib edition (Phase 2c port).
+
+      Minimal XML: nav bar at top, then a scroll container whose inner
+      vertical flow ("content") is populated programmatically with the
+      theme grid, interface toggles + sliders, minimap settings, and
+      client-info section. Building sections in Java keeps the wiring
+      clear: each row knows the state field it updates and the callback
+      it fires on change, all in one place.
+
+      The owo `<scroll>` rule applies — the wrapped flow MUST be the
+      first element child of the scroll container. See SKYZ_PORT_NOTES.md
+      gotcha #10.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>SETTINGS</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Scrollable content (sections built in Java) ─────── -->
+                <scroll direction="vertical" id="scroll-settings">
+                    <flow-layout id="content" direction="vertical">
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                            <vertical method="content"/>
+                        </sizing>
+                        <gap>14</gap>
+                        <padding>
+                            <right>6</right>
+                            <bottom>10</bottom>
+                        </padding>
+                    </flow-layout>
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="fill">100</vertical>
+                    </sizing>
+                    <scrollbar-thiccness>4</scrollbar-thiccness>
+                    <scroll-step>30</scroll-step>
+                </scroll>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

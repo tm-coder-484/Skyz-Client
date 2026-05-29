@@ -1,0 +1,146 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz Shaders screen — owo-lib edition (Phase 2c port).
+
+      Layout:
+        Nav bar    : SKYZ / SHADERS  ── 🌅 Iris Active ──  [← BACK]
+        Action row : [🌅 Open Full Iris Screen]  [↻ Refresh]
+        Body       : two-pane horizontal split
+                       Left  (260 px)  : <scroll> wrapping shader list
+                       Right (expand)  : info / instruction panel
+
+      Both panes are populated programmatically in build() so we can
+      rebuild them when load finishes (daemon thread → render thread
+      via MinecraftClient.execute) or when selection changes.
+    -->
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <padding>
+                <top>14</top>
+                <bottom>16</bottom>
+                <left>20</left>
+                <right>20</right>
+            </padding>
+            <gap>10</gap>
+
+            <children>
+                <!-- ── Nav bar ─────────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label>
+                            <text>SKYZ</text>
+                            <color>#FFEEF6FF</color>
+                        </label>
+                        <label>
+                            <text>/</text>
+                            <color>#4D8CD2FF</color>
+                        </label>
+                        <label>
+                            <text>SHADERS</text>
+                            <color>#888CD2FF</color>
+                        </label>
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <label id="lbl-iris-status">
+                            <text>🌅 Iris Active</text>
+                            <color>#888CD2FF</color>
+                            <margins><right>10</right></margins>
+                        </label>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">76</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Action row ──────────────────────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="content"/>
+                    </sizing>
+                    <gap>6</gap>
+                    <children>
+                        <button id="btn-open-iris">
+                            <text>🌅  OPEN FULL IRIS SCREEN</text>
+                            <sizing>
+                                <horizontal method="fixed">200</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-refresh">
+                            <text>↻  REFRESH</text>
+                            <sizing>
+                                <horizontal method="fixed">90</horizontal>
+                                <vertical method="fixed">20</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Two-pane body (list + info) ─────────────────────── -->
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="expand">100</vertical>
+                    </sizing>
+                    <gap>10</gap>
+                    <children>
+                        <!-- Left: shader list, scroll-wrapped -->
+                        <scroll direction="vertical" id="scroll-list">
+                            <flow-layout id="shader-list" direction="vertical">
+                                <sizing>
+                                    <horizontal method="fill">100</horizontal>
+                                    <vertical method="content"/>
+                                </sizing>
+                                <gap>4</gap>
+                                <padding>
+                                    <right>6</right>
+                                </padding>
+                            </flow-layout>
+                            <sizing>
+                                <horizontal method="fixed">260</horizontal>
+                                <vertical method="fill">100</vertical>
+                            </sizing>
+                            <scrollbar-thiccness>4</scrollbar-thiccness>
+                            <scroll-step>50</scroll-step>
+                        </scroll>
+
+                        <!-- Right: info panel (rebuilt on selection / load) -->
+                        <flow-layout id="info-panel" direction="vertical">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="fill">100</vertical>
+                            </sizing>
+                            <padding>
+                                <top>12</top>
+                                <bottom>12</bottom>
+                                <left>14</left>
+                                <right>14</right>
+                            </padding>
+                            <gap>4</gap>
+                        </flow-layout>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

@@ -1,0 +1,139 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <!--
+      Skyz HUD Editor screen — owo-lib edition (Phase 2c port).
+
+      This XML defines ONLY the screen "chrome" (top-right back button +
+      bottom toolbar). The sidebar, tab strip, tab content panels, and
+      preview area are all built/rendered manually:
+
+        * Preview area (sky/ground gradient + draggable HUD element
+          previews) — drawn in render() BEFORE super.render() so the
+          sidebar overlays it on the right side.
+        * Sidebar — built programmatically in build() and added as a
+          child of the root flow-layout with Positioning.absolute(...).
+          Its tab strip and per-tab list rows are also constructed in
+          Java. owo's static-XML positioning can't compute "anchored
+          right of viewport" without a runtime hook, and the tab
+          content has to swap when you click between tabs, so XML
+          would only get in the way here.
+        * Drag-and-drop is preserved in mouseClicked / mouseDragged /
+          mouseReleased; super.mouseClicked() runs first to give owo
+          components (back/save/reset/sidebar) priority.
+
+      Layout structure:
+        ┌────────────────────────────────[← BACK]─┐
+        │                                          │
+        │      preview area                        │
+        │      (rendered manually)                 │
+        │                                          │
+        ├──────────────────────────────────────────┤
+        │ Snap: 8px  [Grid 8px][Snap ON]           │
+        │                       [Save ✓][Reset]    │
+        └──────────────────────────────────────────┘
+    -->
+    <components>
+        <flow-layout direction="vertical" id="root-flow">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+
+            <children>
+                <!-- ── Top row: back button anchored right ────────────── -->
+                <flow-layout direction="horizontal" id="top-row">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="fixed">26</vertical>
+                    </sizing>
+                    <padding>
+                        <top>4</top>
+                        <right>6</right>
+                    </padding>
+                    <horizontal-alignment>right</horizontal-alignment>
+                    <vertical-alignment>top</vertical-alignment>
+                    <children>
+                        <button id="btn-back">
+                            <text>← BACK</text>
+                            <sizing>
+                                <horizontal method="fixed">64</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+
+                <!-- ── Middle: empty spacer (preview is drawn behind) ─── -->
+                <!--
+                  No surface, no padding. Click events on this region fall
+                  through super.mouseClicked() to our drag-detection code.
+                -->
+                <flow-layout direction="vertical" id="mid-spacer">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="expand">100</vertical>
+                    </sizing>
+                </flow-layout>
+
+                <!-- ── Bottom toolbar ─────────────────────────────────── -->
+                <flow-layout direction="horizontal" id="bottom-bar">
+                    <sizing>
+                        <horizontal method="fill">100</horizontal>
+                        <vertical method="fixed">26</vertical>
+                    </sizing>
+                    <padding>
+                        <top>3</top>
+                        <bottom>3</bottom>
+                        <left>6</left>
+                        <right>6</right>
+                    </padding>
+                    <gap>6</gap>
+                    <vertical-alignment>center</vertical-alignment>
+                    <children>
+                        <label id="lbl-snap">
+                            <text>Snap: 8px</text>
+                            <color>#FF8CD2FF</color>
+                        </label>
+                        <button id="btn-grid">
+                            <text>Grid: 8px</text>
+                            <sizing>
+                                <horizontal method="fixed">68</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-snap-toggle">
+                            <text>Snap ON</text>
+                            <sizing>
+                                <horizontal method="fixed">66</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <!-- Filler pushes save/reset to the right edge.
+                             Inline expand-spacer (a <spacer/> would expand
+                             vertically too and break the row height). -->
+                        <flow-layout direction="horizontal">
+                            <sizing>
+                                <horizontal method="expand">100</horizontal>
+                                <vertical method="content"/>
+                            </sizing>
+                        </flow-layout>
+                        <button id="btn-save">
+                            <text>Save ✓</text>
+                            <sizing>
+                                <horizontal method="fixed">64</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                        <button id="btn-reset">
+                            <text>Reset</text>
+                            <sizing>
+                                <horizontal method="fixed">56</horizontal>
+                                <vertical method="fixed">18</vertical>
+                            </sizing>
+                        </button>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>

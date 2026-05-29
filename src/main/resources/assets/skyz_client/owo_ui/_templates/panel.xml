@@ -1,0 +1,51 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.21/owo-ui.xsd">
+    <templates>
+        <!--
+          .card / .G analogue: rounded-ish glass panel. owo gives us a
+          dark "panel" surface natively; we add an optional title row
+          and a children slot. The HTML's accent border is approximated
+          by the panel surface's built-in inset.
+        -->
+        <template name="panel">
+            <flow-layout direction="vertical">
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+                <padding>
+                    <all>14</all>
+                </padding>
+                <gap>10</gap>
+                <surface>
+                    <panel dark="true"/>
+                </surface>
+                <children>
+                    {{>children}}
+                </children>
+            </flow-layout>
+        </template>
+
+        <!-- A panel with a small label header on top (HTML .section-title) -->
+        <template name="panel-titled">
+            <flow-layout direction="vertical">
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+                <padding>
+                    <all>14</all>
+                </padding>
+                <gap>10</gap>
+                <surface>
+                    <panel dark="true"/>
+                </surface>
+                <children>
+                    <label>
+                        <text>{{title}}</text>
+                        <color>0x4D8CD2FF</color>
+                    </label>
+                    {{>children}}
+                </children>
+            </flow-layout>
+        </template>
+    </templates>
+</owo-ui>
