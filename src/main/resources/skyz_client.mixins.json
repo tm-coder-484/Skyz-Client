@@ -17,7 +17,8 @@
     "FogRendererMixin",
     "GameRendererMixin",
     "ChatHudMixin",
-    "ParticleManagerMixin"
+    "ParticleManagerMixin",
+    "LevelRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

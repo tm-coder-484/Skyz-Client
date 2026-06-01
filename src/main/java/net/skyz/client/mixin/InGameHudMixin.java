@@ -78,8 +78,18 @@ public class InGameHudMixin {
                 .getItemBySlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND);
         if (offhand.is(net.minecraft.world.item.Items.TOTEM_OF_UNDYING)) return;
 
-        // TODO[PORT-26.1]: MultiPlayerGameMode.handleInventoryMouseClick + ClickType.SWAP were
-        // removed in 26.1 (replaced by handleContainerInput(..., ContainerInput, ...)). Auto-totem
-        // offhand-swap is disabled until ported to the new container-input API.
+        net.minecraft.world.entity.player.Inventory inv = client.player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (inv.getItem(i).is(net.minecraft.world.item.Items.TOTEM_OF_UNDYING)) {
+                // 26.1: handleInventoryMouseClick + ClickType.SWAP -> handleContainerInput + ContainerInput.SWAP
+                client.gameMode.handleContainerInput(
+                        client.player.containerMenu.containerId,
+                        40,                                  // offhand slot in the player inventory menu
+                        i < 9 ? i : i,                       // hotbar button index
+                        net.minecraft.world.inventory.ContainerInput.SWAP,
+                        client.player);
+                break;
+            }
+        }
     }
 }

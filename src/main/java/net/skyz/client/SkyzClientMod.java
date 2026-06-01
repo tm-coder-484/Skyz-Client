@@ -46,7 +46,7 @@ public class SkyzClientMod implements ClientModInitializer {
      * tweaks. With owo's hot-reload, edit any _templates/*.xml then re-press
      * this keybind to see the change without rebuilding the mod.
      */
-    public static KeyMapping KITCHEN_SINK_KEY;
+    private static boolean wasKitchenSinkKeyDown = false;
 
     @Override
     public void onInitializeClient() {
@@ -72,11 +72,10 @@ public class SkyzClientMod implements ClientModInitializer {
         // Register the kitchen-sink dev keybind (default: K). KeyBinding
         // categories are first-class records in 1.21.11; MISC lumps Skyz
         // dev keys with other miscellaneous bindings in the controls UI.
-        // TODO[PORT-26.1]: Fabric keybinding module (keybinding.v1.KeyBindingHelper) is not
-        // shipped in Fabric API 0.145.4+26.1.2 yet, and KeyMapping.CATEGORY_MISC was removed
-        // (categories are now KeyMapping.Category objects). The kitchen-sink dev key is left
-        // unregistered until the module lands; the consumeClick loop below guards on null.
-        KITCHEN_SINK_KEY = null;
+        // Dev kitchen-sink key (K). Fabric's keybinding.v1 module isn't shipped for 26.1,
+        // so rather than register a KeyMapping we poll the physical key each client tick
+        // (see the GLFW poll below). It won't show in the Controls screen, but pressing K
+        // in-game opens the kitchen-sink design screen.
 
         // Store server info on join so AutoReconnectManager can reconnect after kicks.
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
@@ -123,15 +122,16 @@ public class SkyzClientMod implements ClientModInitializer {
 
                         net.skyz.client.util.SkyzClientState.tick(client);
 
-            // Dev kitchen-sink keybind. Only opens when no other screen is
-            // active so it doesn't interrupt mid-screen editing.
-            while (KITCHEN_SINK_KEY != null && KITCHEN_SINK_KEY.consumeClick()) {
-                // TODO(port): verify Mojang field name — likely `client.screen` (field) per
-                // Minecraft.java in 26.1; was `currentScreen` in yarn.
-                if (client.screen == null) {
-                    client.setScreen(new net.skyz.client.screen.SkyzKitchenSinkScreen(null));
-                }
+            // Dev kitchen-sink key (K) — polled directly (no Fabric keybinding module on
+            // 26.1). Edge-detected so holding K doesn't re-open; only fires in-game with no
+            // screen active so it can't interrupt typing or other menus.
+            long window = client.getWindow().handle();
+            boolean kDown = org.lwjgl.glfw.GLFW.glfwGetKey(window, org.lwjgl.glfw.GLFW.GLFW_KEY_K)
+                    == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+            if (kDown && !wasKitchenSinkKeyDown && client.screen == null) {
+                client.setScreen(new net.skyz.client.screen.SkyzKitchenSinkScreen(null));
             }
+            wasKitchenSinkKeyDown = kDown;
         });
 
         // Auto-GG: scan incoming game messages for win/loss keywords
