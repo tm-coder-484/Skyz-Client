@@ -1,0 +1,25 @@
+# Gradle / build output
+.gradle/
+build/
+
+# Fabric Loom dev run directory (world, logs, eula)
+run/
+
+# Build scratch logs
+build1.txt
+build2.txt
+scaffold-build.txt
+test-out.txt
+build-errors.txt
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.ipr
+*.iws
+bin/
+
+# OS junk
+.DS_Store
+Thumbs.db

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "sebbyo_combat",
+  "version": "${version}",
+  "name": "Sebbyo Combat",
+  "description": "DonutSMP-style combat tag, kill rewards/penalties, and teams for Fabric 1.21.11.",
+  "authors": ["Sebbyo"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["net.sebbyo.combat.SebbyoCombatMod"],
+    "client": ["net.sebbyo.combat.client.SebbyoCombatClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.3",
+    "minecraft": "~1.21.11",
+    "fabric-api": "*",
+    "java": ">=21"
+  }
+}
