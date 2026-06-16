@@ -11,6 +11,8 @@ build2.txt
 scaffold-build.txt
 test-out.txt
 build-errors.txt
+fixbuild.txt
+rel.txt
 
 # IDE
 .idea/
