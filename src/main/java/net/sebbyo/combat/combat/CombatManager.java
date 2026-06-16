@@ -54,6 +54,12 @@ public final class CombatManager {
         states.remove(id);
     }
 
+    /** Clear the tag and immediately tell the client to hide the timer (used on death). */
+    public void clearTag(ServerPlayerEntity p) {
+        states.remove(p.getUuid());
+        Networking.sendTimer(p, 0);
+    }
+
     public void tick(MinecraftServer server) {
         Iterator<Map.Entry<UUID, CombatState>> it = states.entrySet().iterator();
         while (it.hasNext()) {

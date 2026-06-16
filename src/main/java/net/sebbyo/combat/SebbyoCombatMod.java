@@ -73,7 +73,7 @@ public class SebbyoCombatMod implements ModInitializer {
         // Death: clear combat tag + apply the lose-buff / gain-penalty step.
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             if (entity instanceof ServerPlayerEntity p) {
-                CombatManager.INSTANCE.clearTag(p.getUuid());
+                CombatManager.INSTANCE.clearTag(p);
                 EffectManager.INSTANCE.onDeath(p.getUuid());
             }
         });
