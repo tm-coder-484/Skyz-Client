@@ -45,10 +45,13 @@ action-bar fallback for vanilla clients).
 ### Parties & friendly fire
 - `/party create <name>` · `/party invite <player>` · `/party accept` · `/party decline`
   · `/party leave` · `/party disband` · `/party list` · `/party info` · `/party msg <text>`
-- Named `/party` (not `/team`) so it never clashes with vanilla's op-only `/team`
-  scoreboard command — this one works for everyone and has no scoreboard side effects.
+- Named `/party` (not `/team`) so it never clashes with vanilla's op-only `/team` —
+  it works for everyone, and quietly manages a scoreboard team so members get the
+  vanilla visuals: **team-coloured nametags + glowing outlines, see-invisible
+  teammates, and locator-bar grouping.**
 - Teammates **cannot damage each other** — melee, projectiles, and splash potions
-  are all blocked, and a blocked hit never combat-tags anyone.
+  are all blocked (a brief "X is in your party" message shows), and a blocked hit
+  never combat-tags anyone.
 - One party per player. Invites must be accepted. Only the leader can invite or
   disband. When the leader leaves, leadership passes to the **oldest member**.
 - Teams persist to `<world>/sebbyo_teams.json`; effects to `<world>/sebbyo_rewards.json`.
@@ -59,7 +62,7 @@ action-bar fallback for vanilla clients).
 
 Requires **Fabric Loader ≥ 0.17.3** and **Fabric API** on Minecraft **1.21.11**.
 
-1. Put `sebbyo-combat-1.0.1.jar` and Fabric API in the **host's** `mods/` folder
+1. Put `sebbyo-combat-1.0.2.jar` and Fabric API in the **host's** `mods/` folder
    (the dedicated server, or the player who opens the world to friends).
 2. Friends may optionally install it too for the styled HUD timer — without it they
    get an action-bar timer and are still fully governed by the rules.
@@ -67,7 +70,7 @@ Requires **Fabric Loader ≥ 0.17.3** and **Fabric API** on Minecraft **1.21.11*
 ## Building
 
 ```bash
-./gradlew build          # -> build/libs/sebbyo-combat-1.0.1.jar
+./gradlew build          # -> build/libs/sebbyo-combat-1.0.2.jar
 ./gradlew test           # pure-logic unit tests (effect stacking, teams)
 ./gradlew runServer      # dev dedicated server
 ./gradlew runClient      # dev client

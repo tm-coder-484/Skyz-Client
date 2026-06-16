@@ -49,8 +49,10 @@ public class SebbyoCombatMod implements ModInitializer {
                 CombatManager.INSTANCE.onDisconnect(handler.player));
 
         // Re-apply persisted effects on join (covers reconnect + restart).
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                EffectManager.INSTANCE.applyToPlayer(handler.player));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            EffectManager.INSTANCE.applyToPlayer(handler.player);
+            net.sebbyo.combat.team.PartyVisuals.apply(server, handler.player);
+        });
 
         // Ender pearl / wind charge resets the tag (only if already tagged).
         UseItemCallback.EVENT.register((player, world, hand) -> {
@@ -79,8 +81,11 @@ public class SebbyoCombatMod implements ModInitializer {
         });
 
         // Respawn: re-apply the updated ledger (vanilla cleared effects on death).
-        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
-                EffectManager.INSTANCE.applyToPlayer(newPlayer));
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+            EffectManager.INSTANCE.applyToPlayer(newPlayer);
+            net.sebbyo.combat.team.PartyVisuals.apply(
+                    ((net.minecraft.server.world.ServerWorld) newPlayer.getEntityWorld()).getServer(), newPlayer);
+        });
 
         // Persistence load/save tied to the world.
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {

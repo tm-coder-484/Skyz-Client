@@ -42,6 +42,11 @@ public final class TeamStore {
         return n == null ? null : byName.get(n);
     }
 
+    /** The team with this exact name, or null — used to tell if a party still exists. */
+    public Team getTeamByName(String name) {
+        return byName.get(name);
+    }
+
     public boolean sameTeam(UUID a, UUID b) {
         String x = byPlayer.get(a);
         return x != null && x.equals(byPlayer.get(b));
